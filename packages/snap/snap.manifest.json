@@ -1,0 +1,31 @@
+{
+  "version": "0.1.0",
+  "description": "A snap that helps transcribe transactions to human-readable text.",
+  "proposedName": "Wise Signer",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cyfrin/wise-signer-snap"
+  },
+  "source": {
+    "shasum": "VQqjBza6zbmJCKKaoyW+Z3JagxF67Behtvbpxj1TyUo=",
+    "location": {
+      "npm": {
+        "filePath": "dist/bundle.js",
+        "packageName": "snap",
+        "registry": "https://registry.npmjs.org/",
+        "iconPath": "images/wise-signer.svg"
+      }
+    }
+  },
+  "initialPermissions": {
+    "snap_dialog": {},
+    "endowment:transaction-insight": {
+      "allowTransactionOrigin": true
+    },
+    "endowment:ethereum-provider": {},
+    "endowment:network-access": {},
+    "snap_manageState": {}
+  },
+  "platformVersion": "6.18.0",
+  "manifestVersion": "0.1"
+}

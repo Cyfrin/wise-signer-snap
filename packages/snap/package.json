@@ -1,0 +1,59 @@
+{
+  "name": "snap",
+  "version": "0.1.0",
+  "description": "A snap that helps transcribe transactions to human-readable text.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cyfrin/wise-signer-snap"
+  },
+  "license": "(MIT-0 OR Apache-2.0)",
+  "main": "./dist/bundle.js",
+  "files": [
+    "dist/",
+    "snap.manifest.json",
+    "images/"
+  ],
+  "scripts": {
+    "allow-scripts": "yarn workspace root allow-scripts",
+    "build": "mm-snap build",
+    "build:clean": "yarn clean && yarn build",
+    "clean": "rimraf dist",
+    "lint": "yarn lint:eslint && yarn lint:misc --check",
+    "lint:eslint": "eslint . --cache --ext js,ts",
+    "lint:fix": "yarn lint:eslint --fix && yarn lint:misc --write",
+    "lint:misc": "prettier '**/*.json' '**/*.md' '**/*.yml' '!.yarnrc.yml' --ignore-path ../../.gitignore --no-error-on-unmatched-pattern",
+    "prepublishOnly": "mm-snap manifest",
+    "serve": "mm-snap serve",
+    "start": "mm-snap watch",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@ethersproject/abi": "^5.8.0",
+    "@metamask/network-controller": "^23.5.1",
+    "@metamask/snaps-sdk": "~6.18.0",
+    "eth-method-registry": "^4.0.0",
+    "ethereumjs-util": "^7.1.5",
+    "ethers": "^6.14.3",
+    "localforage": "^1.10.0"
+  },
+  "devDependencies": {
+    "@jest/globals": "^29.5.0",
+    "@metamask/snaps-cli": "^6.6.0",
+    "@metamask/snaps-jest": "^8.9.0",
+    "@types/react": "18.2.4",
+    "@types/react-dom": "18.2.4",
+    "eslint": "^9.11.0",
+    "jest": "^29.5.0",
+    "rimraf": "^3.0.2",
+    "ts-jest": "^29.1.0",
+    "typescript": "~5.7.3"
+  },
+  "packageManager": "yarn@3.2.1",
+  "engines": {
+    "node": ">=18.6.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}
