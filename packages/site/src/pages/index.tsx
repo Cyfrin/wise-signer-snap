@@ -6,6 +6,8 @@ import {
   ReconnectButton,
   SignEIP712Button,
   SendWETHButton,
+  SupplyZKButton,
+  BatchSendWETHButton,
   Card,
 } from '../components';
 import { defaultSnapOrigin } from '../config';
@@ -173,6 +175,42 @@ const Index = () => {
               'Transfer WETH Tokens.',
             button: (
               <SendWETHButton
+                disabled={!installedSnap}
+              />
+            ),
+          }}
+          disabled={!installedSnap}
+          fullWidth={
+            isMetaMaskReady &&
+            Boolean(installedSnap) &&
+            !shouldDisplayReconnectButton(installedSnap)
+          }
+        />
+        <Card
+          content={{
+            title: 'Supply ZK',
+            description:
+              'Supply ZK tokens to the lending protocol.',
+            button: (
+              <SupplyZKButton
+                disabled={!installedSnap}
+              />
+            ),
+          }}
+          disabled={!installedSnap}
+          fullWidth={
+            isMetaMaskReady &&
+            Boolean(installedSnap) &&
+            !shouldDisplayReconnectButton(installedSnap)
+          }
+        />
+        <Card
+          content={{
+            title: 'Approve and Send WETH (EIP-7702)',
+            description:
+              'Send batch WETH transactions atomically using EIP-7702 - approve and supply in one transaction.',
+            button: (
+              <BatchSendWETHButton
                 disabled={!installedSnap}
               />
             ),

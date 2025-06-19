@@ -42,6 +42,13 @@ const Button = styled.button`
   ${({ theme }) => theme.mediaQueries.small} {
     width: 100%;
   }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #666;
+    color: #999;
+  }
 `;
 
 const ButtonText = styled.span`
@@ -139,6 +146,154 @@ export const SendWETHButton = (props: ComponentProps<typeof Button>) => {
   return (
     <Button {...props} onClick={handleSendWETH}>
       Send WETH
+    </Button>
+  );
+};
+
+export const SupplyZKButton = (props: ComponentProps<typeof Button>) => {
+  const { provider } = useMetaMaskContext();
+
+  const handleSupplyZK = async () => {
+    try {
+      // First ensure we have account access
+      const accounts = await provider?.request({ method: 'eth_requestAccounts' }) as string[];
+
+      if (!accounts || accounts.length === 0) {
+        throw new Error('No accounts available');
+      }
+
+      // Transaction parameters for supply function
+      // supply(asset, amount, onBehalfOf, referralCode)
+      const transactionParams = {
+        to: '0x78e30497a3c7527d953c6B1E3541b021A98Ac43c', // Lending protocol contract
+        from: accounts[0],
+        data: '0x617ba037000000000000000000000000005A7d6b2F92C77FAD6CCaBd7EE0624E64907Eaf3E0000000000000000000000000000000000000000000000002bc48b15b8b58000000000000000000000000000' + accounts[0]?.slice(2) + '0000000000000000000000000000000000000000000000000000000000000000', // supply(asset=ZK token, amount=50 ZK, onBehalfOf=user, referralCode=0)
+        value: '0x0',
+      };
+
+      console.log('Sending supply ZK transaction with params:', transactionParams);
+
+      // Send the transaction
+      const txHash = await provider?.request({
+        method: 'eth_sendTransaction',
+        params: [transactionParams],
+      }) as string;
+
+      console.log('Supply ZK Transaction sent! Hash:', txHash);
+
+      // Show success message to user
+      alert(`Supply ZK transaction sent successfully! Transaction hash: ${txHash}`);
+
+    } catch (error: any) {
+      console.error('Error sending supply ZK transaction:', error);
+      alert(`Error: ${error.message}`);
+    }
+  };
+
+  return (
+    <Button {...props} onClick={handleSupplyZK}>
+      Supply ZK
+    </Button>
+  );
+};
+
+export const BatchSendWETHButton = (props: ComponentProps<typeof Button>) => {
+  const { provider } = useMetaMaskContext();
+
+  const handleBatchSendWETH = async () => {
+    try {
+      // First ensure we have account access
+      const accounts = await provider?.request({ method: 'eth_requestAccounts' }) as string[];
+
+      if (!accounts || accounts.length === 0) {
+        throw new Error('No accounts available');
+      }
+
+      // Get current chain ID
+      const chainId = await provider?.request({ method: 'eth_chainId' }) as string;
+      console.log('Current Chain ID:', chainId);
+
+      // Check if atomic batch is supported
+      const capabilities = await provider?.request({
+        method: 'wallet_getCapabilities',
+        params: [accounts[0], [chainId]],
+      }) as any;
+
+      console.log('Wallet capabilities:', capabilities);
+
+
+      // Based on the example JSON provided - approve + supply batch transaction
+      const batchTransactionParams = {
+        version: "2.0.0",
+        from: accounts[0],
+        chainId: chainId,
+        atomicRequired: true,
+        calls: [
+          {
+            // First transaction: Approve WETH for the lending protocol
+            to: "0x5A7d6b2F92C77FAD6CCaBd7EE0624E64907Eaf3E", // WETH token contract
+            value: "0x0",
+            data: "0x095ea7b300000000000000000000000078e30497a3c7527d953c6B1E3541b021A98Ac43c0000000000000000000000000000000000000000000000002bc48b15b8b58000" // approve(spender, 50 WETH)
+          },
+          {
+            // Second transaction: Supply WETH to the lending protocol
+            to: "0x78e30497a3c7527d953c6B1E3541b021A98Ac43c", // Lending protocol contract
+            value: "0x0",
+            data: "0x617ba037000000000000000000000000005A7d6b2F92C77FAD6CCaBd7EE0624E64907Eaf3E0000000000000000000000000000000000000000000000002bc48b15b8b580000000000000000000000000009467919138E36f0252886519f34a0f8016dDb3a30000000000000000000000000000000000000000000000000000000000000000" // supply(asset, amount, onBehalfOf, referralCode)
+          }
+        ]
+      };
+
+      console.log('Sending batch WETH transaction with params:', batchTransactionParams);
+
+      // Send the batch transaction using wallet_sendCalls
+      const batchResult = await provider?.request({
+        method: 'wallet_sendCalls',
+        params: [batchTransactionParams],
+      }) as any;
+
+      console.log('Batch WETH Transaction submitted! Batch ID:', batchResult);
+
+      // Track the batch status
+      const batchId = batchResult?.id;
+
+      // Poll for batch status (you might want to implement a more sophisticated polling mechanism)
+      const checkBatchStatus = async () => {
+        try {
+          const status = await provider?.request({
+            method: 'wallet_getCallsStatus',
+            params: [batchId],
+          }) as any;
+
+          console.log('Batch status:', status);
+
+          if (status?.status === 200) {
+            alert(`Batch WETH transaction completed successfully! Batch ID: ${batchId}`);
+          } else if (status?.status === 400) {
+            alert(`Batch WETH transaction failed. Batch ID: ${batchId}`);
+          } else {
+            // Still pending, check again in 2 seconds
+            setTimeout(checkBatchStatus, 2000);
+          }
+        } catch (error) {
+          console.error('Error checking batch status:', error);
+        }
+      };
+
+      // Start status polling
+      setTimeout(checkBatchStatus, 1000);
+
+      alert(`Batch WETH transaction submitted! Batch ID: ${batchId}\nTracking status...`);
+
+    } catch (error: any) {
+      console.error('Error sending batch WETH transaction:', error);
+      alert(`Error: ${error.message}`);
+    }
+  };
+
+  return (
+    <Button {...props} onClick={handleBatchSendWETH} disabled>
+      Batch Send WETH (EIP-7702) - Not Supported
     </Button>
   );
 };

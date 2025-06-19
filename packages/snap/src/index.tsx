@@ -168,6 +168,15 @@ export const onTransaction: OnTransactionHandler = async ({
   // Create provider adapter
   const providerAdapter = new SnapProviderAdapter(ethereum);
 
+  console.log("WTF")
+  console.log("WTF")
+  console.log("WTF")
+  console.log("WTF")
+  console.log("WTF")
+  console.log("WTF")
+  console.log("WTF")
+  console.log("WTF")
+
   // Decode the transaction data using MetaMask's decoder
   const decodedResult = await decodeTransactionData({
     transactionData: transaction.data as `0x${string}`,
@@ -199,8 +208,6 @@ export const onTransaction: OnTransactionHandler = async ({
   return {
     content: (
       <Box>
-        <Text>Origin: {transactionOrigin as string}</Text>
-        <Text>Chain ID: {chainId as string}</Text>
         <Text>To: {transaction.to}</Text>
         <Text>Value: {transaction.value}</Text>
 

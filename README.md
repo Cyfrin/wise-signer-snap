@@ -51,3 +51,7 @@ script in the `lavamoat.allowScripts` section of `package.json`.
 
 See the documentation for [@lavamoat/allow-scripts](https://github.com/LavaMoat/LavaMoat/tree/main/packages/allow-scripts)
 for more information.
+
+# Debugging a snap
+
+https://docs.metamask.io/snaps/how-to/debug-a-snap/
