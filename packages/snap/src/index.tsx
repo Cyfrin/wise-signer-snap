@@ -2,6 +2,7 @@ import type { OnTransactionHandler } from "@metamask/snaps-sdk";
 import { Box, Heading, Text } from "@metamask/snaps-sdk/jsx";
 import { decodeTransactionData } from "./metamask-decode/util";
 import { SnapProviderAdapter } from "./snapProviderAdapter";
+import { explainTransaction } from "./ai-explainer";
 
 // Types for our decoded data structure
 interface DecodedParam {
@@ -165,17 +166,9 @@ export const onTransaction: OnTransactionHandler = async ({
   chainId,
   transactionOrigin,
 }) => {
+  console.log("WTF")
   // Create provider adapter
   const providerAdapter = new SnapProviderAdapter(ethereum);
-
-  console.log("WTF")
-  console.log("WTF")
-  console.log("WTF")
-  console.log("WTF")
-  console.log("WTF")
-  console.log("WTF")
-  console.log("WTF")
-  console.log("WTF")
 
   // Decode the transaction data using MetaMask's decoder
   const decodedResult = await decodeTransactionData({
@@ -185,8 +178,12 @@ export const onTransaction: OnTransactionHandler = async ({
     provider: providerAdapter as any,
   });
 
+  console.log("WTF2")
+
+
   // Recursively decode any bytes parameters
   let processedResult: DecodedResult | null = null;
+  console.log(decodedResult)
   if (decodedResult) {
     const processedMethods = await Promise.all(
       decodedResult.data.map(async (method) => ({
@@ -203,46 +200,41 @@ export const onTransaction: OnTransactionHandler = async ({
       ...decodedResult,
       data: processedMethods
     };
+
+    const aiResponse = await explainTransaction(
+      JSON.stringify(decodedResult),
+      transaction.to,
+      transaction.from,
+      transaction.value,
+      chainId
+    );
+
+    // Extract text content from the AI response
+    const aiExplanation = aiResponse?.content?.[0]?.type === 'text'
+      ? aiResponse.content[0].text
+      : "Unable to generate AI explanation";
+
+    console.log(aiExplanation)
+
+    return {
+      content: (
+        <Box>
+          <p>hi</p>
+          <Text>{aiExplanation}</Text>
+        </Box>
+      ),
+    };
   }
+
+  console.log("WTF3")
+
 
   return {
     content: (
       <Box>
         <Text>To: {transaction.to}</Text>
         <Text>Value: {transaction.value}</Text>
-
-        {processedResult ? (
-          <Box>
-            <Heading>Decoded Transaction</Heading>
-            <Text>Source: {processedResult.source}</Text>
-
-            {processedResult.data.map((method, methodIndex) => (
-              <Box key={`method-${methodIndex}`}>
-                <Heading>Method: {method.name}</Heading>
-                {method.description ? (
-                  <Text>Description: {method.description}</Text>
-                ) : null}
-
-                {method.params.length > 0 ? (
-                  <Box>
-                    <Text>Parameters:</Text>
-                    {method.params.map((param, paramIndex) =>
-                      renderParam(param, methodIndex, paramIndex)
-                    )}
-                  </Box>
-                ) : (
-                  <Text>No parameters</Text>
-                )}
-              </Box>
-            ))}
-          </Box>
-        ) : (
-          <Box>
-            <Heading>Unable to Decode</Heading>
-            <Text>Raw Data: {transaction.data || 'No data'}</Text>
-            <Text>This transaction could not be decoded with available methods.</Text>
-          </Box>
-        )}
+        <Text>This transaction could not be decoded with available methods.</Text>
       </Box>
     ),
   };

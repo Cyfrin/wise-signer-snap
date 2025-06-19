@@ -213,14 +213,6 @@ export const BatchSendWETHButton = (props: ComponentProps<typeof Button>) => {
       const chainId = await provider?.request({ method: 'eth_chainId' }) as string;
       console.log('Current Chain ID:', chainId);
 
-      // Check if atomic batch is supported
-      const capabilities = await provider?.request({
-        method: 'wallet_getCapabilities',
-        params: [accounts[0], [chainId]],
-      }) as any;
-
-      console.log('Wallet capabilities:', capabilities);
-
 
       // Based on the example JSON provided - approve + supply batch transaction
       const batchTransactionParams = {

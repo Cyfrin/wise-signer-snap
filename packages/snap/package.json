@@ -28,6 +28,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1",
     "@ethersproject/abi": "^5.8.0",
     "@metamask/network-controller": "^23.5.1",
     "@metamask/snaps-sdk": "~6.18.0",
