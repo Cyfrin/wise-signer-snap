@@ -1,4 +1,4 @@
-import { ethers, AbiCoder } from 'ethers';
+import { AbiCoder } from 'ethers';
 
 import type { Transaction, FourByteResponse, DecodedResult } from './types';
 

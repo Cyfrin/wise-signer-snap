@@ -1,6 +1,6 @@
 {
   "name": "wise-signer-snap",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "",
   "homepage": "https://github.com/cyfrin/wise-signer-snap#readme",
   "bugs": {
@@ -32,6 +32,7 @@
     "@metamask/eslint-config-jest": "^14.0.0",
     "@metamask/eslint-config-nodejs": "^14.0.0",
     "@metamask/eslint-config-typescript": "^14.0.0",
+    "@sayfer_io/snapper": "^0.19.0",
     "eslint": "^9.11.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-import-resolver-typescript": "^3.6.3",

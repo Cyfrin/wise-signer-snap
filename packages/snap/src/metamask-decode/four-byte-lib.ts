@@ -76,7 +76,7 @@ export async function getMethodDataAsync(
     let fourByteSig = null;
     if (allow4ByteRequests) {
       fourByteSig = await getMethodFrom4Byte(fourBytePrefix).catch((e) => {
-        console.error(e);
+        // console.error(e);
         return null;
       });
     }
@@ -98,7 +98,7 @@ export async function getMethodDataAsync(
       params: parsedResult.args,
     };
   } catch (error) {
-    console.error(error);
+    // console.error(error);
     return {};
   }
 }

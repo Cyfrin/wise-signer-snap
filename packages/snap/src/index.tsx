@@ -99,7 +99,7 @@ async function recursivelyDecodeBytes(
         };
       }
     } catch (error) {
-      console.log(`Failed to decode bytes parameter: ${error}`);
+      // pass for now because metamask doesn't want console logging.
     }
   }
 

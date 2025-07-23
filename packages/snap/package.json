@@ -1,6 +1,6 @@
 {
   "name": "snap",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A snap that helps transcribe transactions to human-readable text.",
   "repository": {
     "type": "git",

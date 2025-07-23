@@ -1,5 +1,4 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { Message } from '@anthropic-ai/sdk/resources/messages';
 
 export type ExplanationResult = {
   success: boolean;
@@ -87,8 +86,6 @@ export async function explainTransaction(
       explanation,
     };
   } catch (error: any) {
-    console.error('Error during AI explanation:', error);
-
     // Determine error type
     let errorType: ExplanationResult['errorType'] = 'UNKNOWN';
     let errorMessage = 'An unexpected error occurred';

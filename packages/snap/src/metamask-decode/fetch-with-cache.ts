@@ -34,7 +34,7 @@ export async function setStorageItem(key: any, value: any) {
     const serializedData = JSON.stringify(value);
     await localforage.setItem(key, serializedData);
   } catch (err) {
-    console.warn(err);
+    // console.warn(err);
   }
 }
 
@@ -140,7 +140,7 @@ const fetchWithCache = async ({
   if (!response.ok) {
     const message = `Fetch with cache failed within function ${functionName} with status'${response.status}': '${response.statusText}'`;
     if (allowStale) {
-      console.debug(`${message}. Returning cached result`);
+      // console.debug(`${message}. Returning cached result`);
       return cachedResponse;
     }
     throw new Error(
