@@ -159,7 +159,6 @@ export async function decode(transaction: Transaction): Promise<DecodedResult> {
     selector,
     encodedParams,
   );
-  console.log('Decoding result:', decodingResult);
 
   if (!decodingResult) {
     return {

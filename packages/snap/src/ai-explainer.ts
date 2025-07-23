@@ -23,9 +23,6 @@ export async function explainTransaction(
   value: string,
   chainId: string,
 ): Promise<ExplanationResult> {
-  console.log('Transaction details:', { to, from, value, chainId });
-  console.log('Decoded transaction:', decodedTx);
-
   try {
     // Get stored API key from snap state
     const state = await snap.request({
@@ -50,8 +47,6 @@ export async function explainTransaction(
       apiKey,
       dangerouslyAllowBrowser: true,
     });
-
-    console.log('Calling Claude API...');
 
     const msg = await anthropic.beta.messages.create({
       model: selectedModel,
@@ -80,8 +75,6 @@ export async function explainTransaction(
       ],
       betas: ['web-search-2025-03-05'],
     });
-
-    console.log('Claude API response received');
 
     // Extract the explanation from the response
     const explanation = msg.content
