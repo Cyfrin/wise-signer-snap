@@ -69,7 +69,7 @@ export async function explainTransaction(
           // @ts-ignore - TypeScript SDK might not have updated types yet
           type: 'web_search_20250305',
           name: 'web_search',
-          max_uses: 5,
+          max_uses: 30,
         },
       ],
       betas: ['web-search-2025-03-05'],
