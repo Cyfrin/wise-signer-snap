@@ -166,14 +166,23 @@ export const SupplyZKButton = (props: ComponentProps<typeof Button>) => {
 
       // Transaction parameters for supply function
       // supply(asset, amount, onBehalfOf, referralCode)
+
+      // This would be a goodish one...
+      // const transactionParams = {
+      //   to: '0x78e30497a3c7527d953c6B1E3541b021A98Ac43c', // Lending protocol contract
+      //   from: accounts[0],
+      //   data: `0x617ba037000000000000000000000000005A7d6b2F92C77FAD6CCaBd7EE0624E64907Eaf3E0000000000000000000000000000000000000000000000002bc48b15b8b58000000000000000000000000000${accounts[0]?.slice(
+      //     2,
+      //   )}0000000000000000000000000000000000000000000000000000000000000000`, // supply(asset=ZK token, amount=50 ZK, onBehalfOf=user, referralCode=0)
+      //   value: '0x0',
+      // };
+
       const transactionParams = {
         to: '0x78e30497a3c7527d953c6B1E3541b021A98Ac43c', // Lending protocol contract
         from: accounts[0],
-        data: `0x617ba037000000000000000000000000005A7d6b2F92C77FAD6CCaBd7EE0624E64907Eaf3E0000000000000000000000000000000000000000000000002bc48b15b8b58000000000000000000000000000${accounts[0]?.slice(
-          2,
-        )}0000000000000000000000000000000000000000000000000000000000000000`, // supply(asset=ZK token, amount=50 ZK, onBehalfOf=user, referralCode=0)
-        value: '0x0',
-      };
+        data: '0x617ba037000000000000000000000000005a7d6b2f92c77fad6ccabd7ee0624e64907eaf0000000000000000000000000000000000000000000000056bc75e2d6310000000000000000000000000000047666fab8bd0ac7003bce3f5c3585383f09486e20000000000000000000000000000000000000000000000000000000000000000',
+        value: '0x0', // No ETH value being sent, just calling contract function
+      }
 
       console.log(
         'Sending supply ZK transaction with params:',
