@@ -87,6 +87,7 @@ export const onHomePage: OnHomePageHandler = async () => {
             <Bold>Web Search Depth</Bold>
             <Text>More searches = more thorough analysis but higher cost</Text>
             <Dropdown name="web-search-selector" value={maxWebSearches.toString()}>
+              <Option value="0">0 searches (None)</Option>
               <Option value="5">5 searches (Basic)</Option>
               <Option value="10">10 searches (Standard)</Option>
               <Option value="20">20 searches (Thorough)</Option>
