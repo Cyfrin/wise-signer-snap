@@ -1,42 +1,59 @@
-import type { OnTransactionHandler } from "@metamask/snaps-sdk";
-import { Box, Heading, Text, Button, Divider, Spinner } from "@metamask/snaps-sdk/jsx";
-import { decodeTransactionData } from "./metamask-decode/util";
-import { SnapProviderAdapter } from "./snapProviderAdapter";
-import { explainTransaction, isAutoExplainEnabled, isApiKeyConfigured } from "./ai-explainer";
-import { Markdown } from "./markdownFormatter";
+import type { OnTransactionHandler } from '@metamask/snaps-sdk';
+import {
+  Box,
+  Heading,
+  Text,
+  Button,
+  Divider,
+  Spinner,
+} from '@metamask/snaps-sdk/jsx';
+
+import {
+  explainTransaction,
+  isAutoExplainEnabled,
+  isApiKeyConfigured,
+} from './ai-explainer';
+import { Markdown } from './markdownFormatter';
+import { decodeTransactionData } from './metamask-decode/util';
+import { SnapProviderAdapter } from './snapProviderAdapter';
 
 // Export handlers
-export { onHomePage, onUserInput } from "./homePage";
+export { onHomePage, onUserInput } from './homePage';
 
 // Types for our decoded data structure
-interface DecodedParam {
+type DecodedParam = {
   name?: string;
   type?: string;
   value?: any;
   description?: string;
   children?: DecodedParam[];
   decodedBytes?: any;
-}
+};
 
-interface DecodedMethod {
+type DecodedMethod = {
   name: string;
   description?: string;
   params: DecodedParam[];
-}
+};
 
-interface DecodedResult {
+type DecodedResult = {
   source: string;
   data: DecodedMethod[];
-}
+};
 
 /**
  * Recursively attempts to decode bytes parameters
+ *
+ * @param param
+ * @param chainId
+ * @param providerAdapter
+ * @param maxDepth
  */
 async function recursivelyDecodeBytes(
   param: DecodedParam,
   chainId: string,
   providerAdapter: any,
-  maxDepth: number = 3
+  maxDepth: number = 3,
 ): Promise<DecodedParam> {
   if (maxDepth <= 0) {
     return param;
@@ -52,7 +69,8 @@ async function recursivelyDecodeBytes(
     try {
       const decodedBytes = await decodeTransactionData({
         transactionData: param.value as `0x${string}`,
-        contractAddress: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+        contractAddress:
+          '0x0000000000000000000000000000000000000000' as `0x${string}`,
         chainId: chainId as `0x${string}`,
         provider: providerAdapter,
       });
@@ -62,16 +80,22 @@ async function recursivelyDecodeBytes(
           decodedBytes.data.map(async (method) => ({
             ...method,
             params: await Promise.all(
-              method.params.map(async (nestedParam) =>
-                await recursivelyDecodeBytes(nestedParam, chainId, providerAdapter, maxDepth - 1)
-              )
-            )
-          }))
+              method.params.map(
+                async (nestedParam) =>
+                  await recursivelyDecodeBytes(
+                    nestedParam,
+                    chainId,
+                    providerAdapter,
+                    maxDepth - 1,
+                  ),
+              ),
+            ),
+          })),
         );
 
         param.decodedBytes = {
           ...decodedBytes,
-          data: processedMethods
+          data: processedMethods,
         };
       }
     } catch (error) {
@@ -81,9 +105,15 @@ async function recursivelyDecodeBytes(
 
   if (param.children && param.children.length > 0) {
     param.children = await Promise.all(
-      param.children.map(async (child) =>
-        await recursivelyDecodeBytes(child, chainId, providerAdapter, maxDepth - 1)
-      )
+      param.children.map(
+        async (child) =>
+          await recursivelyDecodeBytes(
+            child,
+            chainId,
+            providerAdapter,
+            maxDepth - 1,
+          ),
+      ),
     );
   }
 
@@ -92,46 +122,62 @@ async function recursivelyDecodeBytes(
 
 /**
  * Renders a parameter with its potential decoded bytes
+ *
+ * @param param
+ * @param methodIndex
+ * @param paramIndex
+ * @param prefix
  */
 function renderParam(
   param: DecodedParam,
   methodIndex: number,
   paramIndex: number,
-  prefix: string = ""
+  prefix: string = '',
 ): JSX.Element {
   const keyPrefix = `method-${methodIndex}-param-${paramIndex}${prefix}`;
 
   return (
     <Box key={keyPrefix}>
       <Text>
-        {prefix}{param.name ? `${param.name}` : `Param ${paramIndex}`}
-        {param.type ? ` (${param.type})` : ''}: {param.value ? String(param.value) : 'undefined'}
+        {prefix}
+        {param.name ? `${param.name}` : `Param ${paramIndex}`}
+        {param.type ? ` (${param.type})` : ''}:{' '}
+        {param.value ? String(param.value) : 'undefined'}
       </Text>
 
       {param.description ? (
-        <Text>{prefix}  └ {param.description}</Text>
+        <Text>
+          {prefix} └ {param.description}
+        </Text>
       ) : null}
 
       {param.decodedBytes ? (
         <Box>
-          <Text>{prefix}  🔍 Decoded bytes content:</Text>
-          {param.decodedBytes.data.map((decodedMethod: DecodedMethod, decodedMethodIndex: number) => (
-            <Box key={`${keyPrefix}-decoded-${decodedMethodIndex}`}>
-              <Text>{prefix}    📋 Method: {decodedMethod.name}</Text>
-              {decodedMethod.description ? (
-                <Text>{prefix}      └ {decodedMethod.description}</Text>
-              ) : null}
+          <Text>{prefix} 🔍 Decoded bytes content:</Text>
+          {param.decodedBytes.data.map(
+            (decodedMethod: DecodedMethod, decodedMethodIndex: number) => (
+              <Box key={`${keyPrefix}-decoded-${decodedMethodIndex}`}>
+                <Text>
+                  {prefix} 📋 Method: {decodedMethod.name}
+                </Text>
+                {decodedMethod.description ? (
+                  <Text>
+                    {prefix} └ {decodedMethod.description}
+                  </Text>
+                ) : null}
 
-              {decodedMethod.params.map((decodedParam: DecodedParam, decodedParamIndex: number) =>
-                renderParam(
-                  decodedParam,
-                  methodIndex,
-                  paramIndex + decodedParamIndex + 1000,
-                  prefix + "      "
-                )
-              )}
-            </Box>
-          ))}
+                {decodedMethod.params.map(
+                  (decodedParam: DecodedParam, decodedParamIndex: number) =>
+                    renderParam(
+                      decodedParam,
+                      methodIndex,
+                      paramIndex + decodedParamIndex + 1000,
+                      `${prefix}      `,
+                    ),
+                )}
+              </Box>
+            ),
+          )}
         </Box>
       ) : null}
 
@@ -142,8 +188,8 @@ function renderParam(
               child,
               methodIndex,
               paramIndex + childIndex + 100,
-              prefix + "  └ "
-            )
+              `${prefix}  └ `,
+            ),
           )}
         </Box>
       ) : null}
@@ -174,7 +220,9 @@ export const onTransaction: OnTransactionHandler = async ({
     return {
       content: (
         <Box>
-          <Text>This transaction could not be decoded with available methods.</Text>
+          <Text>
+            This transaction could not be decoded with available methods.
+          </Text>
         </Box>
       ),
     };
@@ -185,23 +233,24 @@ export const onTransaction: OnTransactionHandler = async ({
     decodedResult.data.map(async (method) => ({
       ...method,
       params: await Promise.all(
-        method.params.map(async (param) =>
-          await recursivelyDecodeBytes(param, chainId, providerAdapter)
-        )
-      )
-    }))
+        method.params.map(
+          async (param) =>
+            await recursivelyDecodeBytes(param, chainId, providerAdapter),
+        ),
+      ),
+    })),
   );
 
   const processedResult: DecodedResult = {
     ...decodedResult,
-    data: processedMethods
+    data: processedMethods,
   };
 
   // Auto-explain is enabled - show loading state first
   if (autoExplainEnabled && hasApiKey) {
     // Create an interface with loading state
     const interfaceId = await snap.request({
-      method: "snap_createInterface",
+      method: 'snap_createInterface',
       params: {
         ui: (
           <Box>
@@ -219,7 +268,7 @@ export const onTransaction: OnTransactionHandler = async ({
       transaction.to || '',
       transaction.from || '',
       transaction.value || '0',
-      chainId
+      chainId,
     );
 
     // Update the interface with the result
@@ -234,7 +283,7 @@ export const onTransaction: OnTransactionHandler = async ({
               <Markdown>{aiResponse.explanation}</Markdown>
               <Divider />
               <Text color="muted">
-                Source: {transactionOrigin || "Unknown"}
+                Source: {transactionOrigin || 'Unknown'}
               </Text>
             </Box>
           ),
@@ -250,7 +299,7 @@ export const onTransaction: OnTransactionHandler = async ({
             <Box>
               <Heading>Transaction Details</Heading>
               <Text color="error">
-                AI Analysis Error: {aiResponse.error || "Unknown error"}
+                AI Analysis Error: {aiResponse.error || 'Unknown error'}
               </Text>
 
               {aiResponse.errorType === 'NO_API_KEY' && (
@@ -259,15 +308,15 @@ export const onTransaction: OnTransactionHandler = async ({
                 </Text>
               )}
 
-              <Text>From: {transactionOrigin || "Unknown origin"}</Text>
+              <Text>From: {transactionOrigin || 'Unknown origin'}</Text>
               {decodedResult.data.map((method, methodIndex) => (
                 <Box key={`method-${methodIndex}`}>
                   <Text>📋 Method: {method.name}</Text>
                   {method.description ? (
-                    <Text>  └ {method.description}</Text>
+                    <Text> └ {method.description}</Text>
                   ) : null}
                   {method.params.map((param, paramIndex) =>
-                    renderParam(param, methodIndex, paramIndex, "  ")
+                    renderParam(param, methodIndex, paramIndex, '  '),
                   )}
                 </Box>
               ))}
@@ -285,20 +334,20 @@ export const onTransaction: OnTransactionHandler = async ({
   // If auto-explain is disabled but API key exists, create interactive interface
   if (!autoExplainEnabled && hasApiKey) {
     const interfaceId = await snap.request({
-      method: "snap_createInterface",
+      method: 'snap_createInterface',
       params: {
         ui: (
           <Box>
             <Heading>Transaction Details</Heading>
-            <Text>From: {transactionOrigin || "Unknown origin"}</Text>
+            <Text>From: {transactionOrigin || 'Unknown origin'}</Text>
             {decodedResult.data.map((method, methodIndex) => (
               <Box key={`method-${methodIndex}`}>
                 <Text>📋 Method: {method.name}</Text>
                 {method.description ? (
-                  <Text>  └ {method.description}</Text>
+                  <Text> └ {method.description}</Text>
                 ) : null}
                 {method.params.map((param, paramIndex) =>
-                  renderParam(param, methodIndex, paramIndex, "  ")
+                  renderParam(param, methodIndex, paramIndex, '  '),
                 )}
               </Box>
             ))}
@@ -313,9 +362,9 @@ export const onTransaction: OnTransactionHandler = async ({
           to: transaction.to || '',
           from: transaction.from || '',
           value: transaction.value || '0',
-          chainId: chainId,
-          transactionOrigin: transactionOrigin || ''
-        }
+          chainId,
+          transactionOrigin: transactionOrigin || '',
+        },
       },
     });
 
@@ -330,21 +379,20 @@ export const onTransaction: OnTransactionHandler = async ({
       content: (
         <Box>
           <Heading>Transaction Details</Heading>
-          <Text>From: {transactionOrigin || "Unknown origin"}</Text>
+          <Text>From: {transactionOrigin || 'Unknown origin'}</Text>
           {decodedResult.data.map((method, methodIndex) => (
             <Box key={`method-${methodIndex}`}>
               <Text>📋 Method: {method.name}</Text>
-              {method.description ? (
-                <Text>  └ {method.description}</Text>
-              ) : null}
+              {method.description ? <Text> └ {method.description}</Text> : null}
               {method.params.map((param, paramIndex) =>
-                renderParam(param, methodIndex, paramIndex, "  ")
+                renderParam(param, methodIndex, paramIndex, '  '),
               )}
             </Box>
           ))}
           <Divider />
           <Text color="warning">
-            💡 Configure your Claude API key in the Snap home page to enable AI analysis
+            💡 Configure your Claude API key in the Snap home page to enable AI
+            analysis
           </Text>
         </Box>
       ),

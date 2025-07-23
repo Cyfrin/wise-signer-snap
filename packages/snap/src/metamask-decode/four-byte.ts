@@ -1,14 +1,21 @@
+import type { ParamType } from '@ethersproject/abi';
+import { Interface } from '@ethersproject/abi';
+import type { Hex } from '@metamask/utils';
+import { createProjectLogger } from '@metamask/utils';
 import { addHexPrefix } from 'ethereumjs-util';
-import { Interface, ParamType } from '@ethersproject/abi';
-import { Hex, createProjectLogger } from '@metamask/utils';
-import {
+
+import { getMethodFrom4Byte } from './four-byte-lib';
+import type {
   DecodedTransactionDataMethod,
   DecodedTransactionDataParam,
 } from './transaction-decode';
-import { getMethodFrom4Byte } from './four-byte-lib';
 
 const log = createProjectLogger('four-byte');
 
+/**
+ *
+ * @param transactionData
+ */
 export async function decodeTransactionDataWithFourByte(
   transactionData: string,
 ): Promise<DecodedTransactionDataMethod | undefined> {
@@ -27,7 +34,7 @@ export async function decodeTransactionDataWithFourByte(
 
   const valueData = addHexPrefix(transactionData.slice(10));
   // TODO: Fix in https://github.com/MetaMask/metamask-extension/issues/31973
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const values = Interface.getAbiCoder().decode(inputs, valueData) as any[];
 
   const params = inputs.map((input, index) =>
@@ -37,15 +44,21 @@ export async function decodeTransactionDataWithFourByte(
   return { name, params };
 }
 
+/**
+ *
+ * @param input
+ * @param index
+ * @param values
+ */
 function decodeParam(
   input: ParamType,
   index: number,
   // TODO: Fix in https://github.com/MetaMask/metamask-extension/issues/31973
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   values: any[],
 ): DecodedTransactionDataParam {
   // TODO: Fix in https://github.com/MetaMask/metamask-extension/issues/31973
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const value = values[index] as any[];
   const { type, name } = input;
 
@@ -75,6 +88,10 @@ function decodeParam(
   };
 }
 
+/**
+ *
+ * @param signature
+ */
 function parseSignature(signature: string): ParamType[] {
   let typeString = signature.slice(signature.indexOf('(') + 1, -1);
   const nested = [];
@@ -88,13 +105,19 @@ function parseSignature(signature: string): ParamType[] {
 
     nested.push(nestedBrackets.value);
 
-    typeString = `${typeString.slice(0, nestedBrackets.start)}${nested.length - 1
-      }#${typeString.slice(nestedBrackets.end + 1)}`;
+    typeString = `${typeString.slice(0, nestedBrackets.start)}${
+      nested.length - 1
+    }#${typeString.slice(nestedBrackets.end + 1)}`;
   }
 
   return createInput(typeString, nested);
 }
 
+/**
+ *
+ * @param typeString
+ * @param nested
+ */
 function createInput(typeString: string, nested: string[]): ParamType[] {
   return typeString.split(',').map((value) => {
     const parts = value.split('#');
@@ -114,6 +137,10 @@ function createInput(typeString: string, nested: string[]): ParamType[] {
   });
 }
 
+/**
+ *
+ * @param value
+ */
 function findFirstNestedBrackets(
   value: string,
 ): { start: number; end: number; value: string } | undefined {

@@ -155,11 +155,7 @@ const Index = () => {
             title: 'Sign EIP-712 Message',
             description:
               'Sign a typed data message following the EIP-712 standard.',
-            button: (
-              <SignEIP712Button
-                disabled={!installedSnap}
-              />
-            ),
+            button: <SignEIP712Button disabled={!installedSnap} />,
           }}
           disabled={!installedSnap}
           fullWidth={
@@ -171,13 +167,8 @@ const Index = () => {
         <Card
           content={{
             title: 'Send WETH',
-            description:
-              'Transfer WETH Tokens.',
-            button: (
-              <SendWETHButton
-                disabled={!installedSnap}
-              />
-            ),
+            description: 'Transfer WETH Tokens.',
+            button: <SendWETHButton disabled={!installedSnap} />,
           }}
           disabled={!installedSnap}
           fullWidth={
@@ -189,13 +180,8 @@ const Index = () => {
         <Card
           content={{
             title: 'Supply ZK',
-            description:
-              'Supply ZK tokens to the lending protocol.',
-            button: (
-              <SupplyZKButton
-                disabled={!installedSnap}
-              />
-            ),
+            description: 'Supply ZK tokens to the lending protocol.',
+            button: <SupplyZKButton disabled={!installedSnap} />,
           }}
           disabled={!installedSnap}
           fullWidth={
@@ -209,11 +195,7 @@ const Index = () => {
             title: 'Approve and Send WETH (EIP-7702)',
             description:
               'Send batch WETH transactions atomically using EIP-7702 - approve and supply in one transaction.',
-            button: (
-              <BatchSendWETHButton
-                disabled={!installedSnap}
-              />
-            ),
+            button: <BatchSendWETHButton disabled={!installedSnap} />,
           }}
           disabled={!installedSnap}
           fullWidth={

@@ -42,7 +42,7 @@ const Button = styled.button`
   ${({ theme }) => theme.mediaQueries.small} {
     width: 100%;
   }
-  
+
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -102,14 +102,15 @@ export const ReconnectButton = (props: ComponentProps<typeof Button>) => {
   );
 };
 
-
 export const SendWETHButton = (props: ComponentProps<typeof Button>) => {
   const { provider } = useMetaMaskContext();
 
   const handleSendWETH = async () => {
     try {
       // First ensure we have account access
-      const accounts = await provider?.request({ method: 'eth_requestAccounts' }) as string[];
+      const accounts = (await provider?.request({
+        method: 'eth_requestAccounts',
+      })) as string[];
 
       if (!accounts || accounts.length === 0) {
         throw new Error('No accounts available');
@@ -128,16 +129,15 @@ export const SendWETHButton = (props: ComponentProps<typeof Button>) => {
       console.log('Sending WETH transaction with params:', transactionParams);
 
       // Send the transaction
-      const txHash = await provider?.request({
+      const txHash = (await provider?.request({
         method: 'eth_sendTransaction',
         params: [transactionParams],
-      }) as string;
+      })) as string;
 
       console.log('WETH Transaction sent! Hash:', txHash);
 
       // Optionally show success message to user
       alert(`WETH transaction sent successfully! Transaction hash: ${txHash}`);
-
     } catch (error: any) {
       console.error('Error sending WETH transaction:', error);
     }
@@ -156,7 +156,9 @@ export const SupplyZKButton = (props: ComponentProps<typeof Button>) => {
   const handleSupplyZK = async () => {
     try {
       // First ensure we have account access
-      const accounts = await provider?.request({ method: 'eth_requestAccounts' }) as string[];
+      const accounts = (await provider?.request({
+        method: 'eth_requestAccounts',
+      })) as string[];
 
       if (!accounts || accounts.length === 0) {
         throw new Error('No accounts available');
@@ -167,23 +169,29 @@ export const SupplyZKButton = (props: ComponentProps<typeof Button>) => {
       const transactionParams = {
         to: '0x78e30497a3c7527d953c6B1E3541b021A98Ac43c', // Lending protocol contract
         from: accounts[0],
-        data: '0x617ba037000000000000000000000000005A7d6b2F92C77FAD6CCaBd7EE0624E64907Eaf3E0000000000000000000000000000000000000000000000002bc48b15b8b58000000000000000000000000000' + accounts[0]?.slice(2) + '0000000000000000000000000000000000000000000000000000000000000000', // supply(asset=ZK token, amount=50 ZK, onBehalfOf=user, referralCode=0)
+        data: `0x617ba037000000000000000000000000005A7d6b2F92C77FAD6CCaBd7EE0624E64907Eaf3E0000000000000000000000000000000000000000000000002bc48b15b8b58000000000000000000000000000${accounts[0]?.slice(
+          2,
+        )}0000000000000000000000000000000000000000000000000000000000000000`, // supply(asset=ZK token, amount=50 ZK, onBehalfOf=user, referralCode=0)
         value: '0x0',
       };
 
-      console.log('Sending supply ZK transaction with params:', transactionParams);
+      console.log(
+        'Sending supply ZK transaction with params:',
+        transactionParams,
+      );
 
       // Send the transaction
-      const txHash = await provider?.request({
+      const txHash = (await provider?.request({
         method: 'eth_sendTransaction',
         params: [transactionParams],
-      }) as string;
+      })) as string;
 
       console.log('Supply ZK Transaction sent! Hash:', txHash);
 
       // Show success message to user
-      alert(`Supply ZK transaction sent successfully! Transaction hash: ${txHash}`);
-
+      alert(
+        `Supply ZK transaction sent successfully! Transaction hash: ${txHash}`,
+      );
     } catch (error: any) {
       console.error('Error sending supply ZK transaction:', error);
       alert(`Error: ${error.message}`);
@@ -203,46 +211,52 @@ export const BatchSendWETHButton = (props: ComponentProps<typeof Button>) => {
   const handleBatchSendWETH = async () => {
     try {
       // First ensure we have account access
-      const accounts = await provider?.request({ method: 'eth_requestAccounts' }) as string[];
+      const accounts = (await provider?.request({
+        method: 'eth_requestAccounts',
+      })) as string[];
 
       if (!accounts || accounts.length === 0) {
         throw new Error('No accounts available');
       }
 
       // Get current chain ID
-      const chainId = await provider?.request({ method: 'eth_chainId' }) as string;
+      const chainId = (await provider?.request({
+        method: 'eth_chainId',
+      })) as string;
       console.log('Current Chain ID:', chainId);
-
 
       // Based on the example JSON provided - approve + supply batch transaction
       const batchTransactionParams = {
-        version: "2.0.0",
+        version: '2.0.0',
         from: accounts[0],
-        chainId: chainId,
+        chainId,
         atomicRequired: true,
         calls: [
           {
             // First transaction: Approve WETH for the lending protocol
-            to: "0x5A7d6b2F92C77FAD6CCaBd7EE0624E64907Eaf3E", // WETH token contract
-            value: "0x0",
-            data: "0x095ea7b300000000000000000000000078e30497a3c7527d953c6B1E3541b021A98Ac43c0000000000000000000000000000000000000000000000002bc48b15b8b58000" // approve(spender, 50 WETH)
+            to: '0x5A7d6b2F92C77FAD6CCaBd7EE0624E64907Eaf3E', // WETH token contract
+            value: '0x0',
+            data: '0x095ea7b300000000000000000000000078e30497a3c7527d953c6B1E3541b021A98Ac43c0000000000000000000000000000000000000000000000002bc48b15b8b58000', // approve(spender, 50 WETH)
           },
           {
             // Second transaction: Supply WETH to the lending protocol
-            to: "0x78e30497a3c7527d953c6B1E3541b021A98Ac43c", // Lending protocol contract
-            value: "0x0",
-            data: "0x617ba037000000000000000000000000005A7d6b2F92C77FAD6CCaBd7EE0624E64907Eaf3E0000000000000000000000000000000000000000000000002bc48b15b8b580000000000000000000000000009467919138E36f0252886519f34a0f8016dDb3a30000000000000000000000000000000000000000000000000000000000000000" // supply(asset, amount, onBehalfOf, referralCode)
-          }
-        ]
+            to: '0x78e30497a3c7527d953c6B1E3541b021A98Ac43c', // Lending protocol contract
+            value: '0x0',
+            data: '0x617ba037000000000000000000000000005A7d6b2F92C77FAD6CCaBd7EE0624E64907Eaf3E0000000000000000000000000000000000000000000000002bc48b15b8b580000000000000000000000000009467919138E36f0252886519f34a0f8016dDb3a30000000000000000000000000000000000000000000000000000000000000000', // supply(asset, amount, onBehalfOf, referralCode)
+          },
+        ],
       };
 
-      console.log('Sending batch WETH transaction with params:', batchTransactionParams);
+      console.log(
+        'Sending batch WETH transaction with params:',
+        batchTransactionParams,
+      );
 
       // Send the batch transaction using wallet_sendCalls
-      const batchResult = await provider?.request({
+      const batchResult = (await provider?.request({
         method: 'wallet_sendCalls',
         params: [batchTransactionParams],
-      }) as any;
+      })) as any;
 
       console.log('Batch WETH Transaction submitted! Batch ID:', batchResult);
 
@@ -252,15 +266,17 @@ export const BatchSendWETHButton = (props: ComponentProps<typeof Button>) => {
       // Poll for batch status (you might want to implement a more sophisticated polling mechanism)
       const checkBatchStatus = async () => {
         try {
-          const status = await provider?.request({
+          const status = (await provider?.request({
             method: 'wallet_getCallsStatus',
             params: [batchId],
-          }) as any;
+          })) as any;
 
           console.log('Batch status:', status);
 
           if (status?.status === 200) {
-            alert(`Batch WETH transaction completed successfully! Batch ID: ${batchId}`);
+            alert(
+              `Batch WETH transaction completed successfully! Batch ID: ${batchId}`,
+            );
           } else if (status?.status === 400) {
             alert(`Batch WETH transaction failed. Batch ID: ${batchId}`);
           } else {
@@ -275,8 +291,9 @@ export const BatchSendWETHButton = (props: ComponentProps<typeof Button>) => {
       // Start status polling
       setTimeout(checkBatchStatus, 1000);
 
-      alert(`Batch WETH transaction submitted! Batch ID: ${batchId}\nTracking status...`);
-
+      alert(
+        `Batch WETH transaction submitted! Batch ID: ${batchId}\nTracking status...`,
+      );
     } catch (error: any) {
       console.error('Error sending batch WETH transaction:', error);
       alert(`Error: ${error.message}`);
@@ -296,7 +313,9 @@ export const SignEIP712Button = (props: ComponentProps<typeof Button>) => {
   const handleSignClick = async () => {
     try {
       // Get current chain ID
-      const chainId = await provider?.request({ method: 'eth_chainId' }) as string;
+      const chainId = (await provider?.request({
+        method: 'eth_chainId',
+      })) as string;
       console.log('Current Chain ID:', chainId);
 
       // Convert hex chain ID to decimal string for EIP-712 domain
@@ -305,42 +324,44 @@ export const SignEIP712Button = (props: ComponentProps<typeof Button>) => {
       const msgParams = {
         types: {
           SafeTx: [
-            { type: "address", name: "to" },
-            { type: "uint256", name: "value" },
-            { type: "bytes", name: "data" },
-            { type: "uint8", name: "operation" },
-            { type: "uint256", name: "safeTxGas" },
-            { type: "uint256", name: "baseGas" },
-            { type: "uint256", name: "gasPrice" },
-            { type: "address", name: "gasToken" },
-            { type: "address", name: "refundReceiver" },
-            { type: "uint256", name: "nonce" }
+            { type: 'address', name: 'to' },
+            { type: 'uint256', name: 'value' },
+            { type: 'bytes', name: 'data' },
+            { type: 'uint8', name: 'operation' },
+            { type: 'uint256', name: 'safeTxGas' },
+            { type: 'uint256', name: 'baseGas' },
+            { type: 'uint256', name: 'gasPrice' },
+            { type: 'address', name: 'gasToken' },
+            { type: 'address', name: 'refundReceiver' },
+            { type: 'uint256', name: 'nonce' },
           ],
           EIP712Domain: [
-            { name: "chainId", type: "uint256" },
-            { name: "verifyingContract", type: "address" }
-          ]
+            { name: 'chainId', type: 'uint256' },
+            { name: 'verifyingContract', type: 'address' },
+          ],
         },
         domain: {
           chainId: chainIdDecimal, // Use dynamic chain ID
-          verifyingContract: "0x4087d2046A7435911fC26DCFac1c2Db26957Ab72"
+          verifyingContract: '0x4087d2046A7435911fC26DCFac1c2Db26957Ab72',
         },
-        primaryType: "SafeTx",
+        primaryType: 'SafeTx',
         message: {
-          to: "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
-          value: "0",
-          data: "0xa9059cbb000000000000000000000000d8da6bf26964af9d7eed9e03e53415d37aa960450000000000000000000000000000000000000000000000000de0b6b3a7640000",
-          operation: "0",
-          safeTxGas: "0",
-          baseGas: "0",
-          gasPrice: "0",
-          gasToken: "0x0000000000000000000000000000000000000000",
-          refundReceiver: "0x0000000000000000000000000000000000000000",
-          nonce: "29"
-        }
+          to: '0x82af49447d8a07e3bd95bd0d56f35241523fbab1',
+          value: '0',
+          data: '0xa9059cbb000000000000000000000000d8da6bf26964af9d7eed9e03e53415d37aa960450000000000000000000000000000000000000000000000000de0b6b3a7640000',
+          operation: '0',
+          safeTxGas: '0',
+          baseGas: '0',
+          gasPrice: '0',
+          gasToken: '0x0000000000000000000000000000000000000000',
+          refundReceiver: '0x0000000000000000000000000000000000000000',
+          nonce: '29',
+        },
       };
 
-      const accounts = await provider?.request({ method: 'eth_requestAccounts' }) as string[];
+      const accounts = (await provider?.request({
+        method: 'eth_requestAccounts',
+      })) as string[];
       const result = await provider?.request({
         method: 'eth_signTypedData_v4',
         params: [accounts[0], JSON.stringify(msgParams)],
@@ -352,7 +373,11 @@ export const SignEIP712Button = (props: ComponentProps<typeof Button>) => {
     }
   };
 
-  return <Button {...props} onClick={handleSignClick}>Sign EIP-712 Message</Button>;
+  return (
+    <Button {...props} onClick={handleSignClick}>
+      Sign EIP-712 Message
+    </Button>
+  );
 };
 
 export const HeaderButtons = () => {

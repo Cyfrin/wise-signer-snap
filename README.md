@@ -1,57 +1,92 @@
-# @metamask/template-snap-monorepo
+# Wise Signer Snap
 
-This repository demonstrates how to develop a snap with TypeScript. For detailed
-instructions, see [the MetaMask documentation](https://docs.metamask.io/guide/snaps.html#serving-a-snap-to-your-local-environment).
+A MetaMask Snap that uses Claude AI to explain blockchain transactions in plain English, helping users understand what they're signing before they sign it.
 
-MetaMask Snaps is a system that allows anyone to safely expand the capabilities
-of MetaMask. A _snap_ is a program that we run in an isolated environment that
-can customize the wallet experience.
+<img src="./img/insights.png" width="225" alt="wise-signer">
 
-## Snaps is pre-release software
+- [Wise Signer Snap](#wise-signer-snap)
+- [Getting Started](#getting-started)
+  - [Requirements](#requirements)
+    - [Environment Variables](#environment-variables)
+  - [Setup](#setup)
+- [Usage](#usage)
+  - [Configuration](#configuration)
+  - [Transaction Analysis](#transaction-analysis)
+  - [License](#license)
+  - [Acknowledgments](#acknowledgments)
 
-To interact with (your) Snaps, you will need to install [MetaMask Flask](https://metamask.io/flask/),
-a canary distribution for developers that provides access to upcoming features.
+# Getting Started
 
-## Getting Started
+## Requirements
 
-Clone the template-snap repository [using this template](https://github.com/MetaMask/template-snap-monorepo/generate)
-and set up the development environment:
+- [node](https://nodejs.org/en/download)
+    - You'll know you've installed it right if you can run `node --version` and get a response like `v20.0.0` or higher
+- [yarn](https://yarnpkg.com/)
+    - You'll know you've installed it right if you can run `yarn --version` and get a response like `1.22.0`
+- [MetaMask Flask](https://metamask.io/flask/)
+    - Development version of MetaMask that supports Snaps
+- [git](https://git-scm.com/downloads)
+    - You'll know you've installed it right if you can run `git --version` and get a response like `git version 2.33.0`
 
-```shell
-yarn install && yarn start
+### Environment Variables
+
+No environment variables are required! Users provide their own Claude API keys through the Snap's interface.
+
+## Setup
+
+```bash
+git clone https://github.com/your-username/wise-signer-snap
+cd wise-signer-snap
+yarn install
+yarn start
 ```
 
-## Cloning
+This will:
+1. Install all dependencies
+2. Build the Snap
+3. Start a local server on `http://localhost:8080`
 
-This repository contains GitHub Actions that you may find useful, see
-`.github/workflows` and [Releasing & Publishing](https://github.com/MetaMask/template-snap-monorepo/edit/main/README.md#releasing--publishing)
-below for more information.
+To install the Snap in MetaMask Flask:
+1. Open MetaMask Flask
+2. Navigate to `http://localhost:8080` in your browser
+3. Click "Connect" when prompted to install the Snap
 
-If you clone or create this repository outside the MetaMask GitHub organization,
-you probably want to run `./scripts/cleanup.sh` to remove some files that will
-not work properly outside the MetaMask GitHub organization.
+# Usage
 
-If you don't wish to use any of the existing GitHub actions in this repository,
-simply delete the `.github/workflows` directory.
+## Configuration
 
-## Contributing
+1. [Get a Claude API Key](https://console.anthropic.com/settings/workspaces/default/keys)
+   
+2. **Configure the Snap**:
+   - Click on the Snap in MetaMask (Menu → Snaps → AI Transaction Explainer)
+   - Paste your Claude API key and click "Save API Key"
+   - Choose your preferred model:
+     - **Claude Opus 4**: Most capable, best for complex transactions
+     - **Claude Sonnet 4**: Balanced performance and speed
+     - **Claude Sonnet 3.7**: Fastest responses
+   - Toggle "Auto-Explain" based on your preference
 
-### Testing and Linting
+## Transaction Analysis
 
-Run `yarn test` to run the tests once.
+When you encounter a transaction:
 
-Run `yarn lint` to run the linter, or run `yarn lint:fix` to run the linter and
-fix any automatically fixable issues.
+- **With Auto-Explain Enabled**: The Snap automatically analyzes the transaction and shows an AI explanation
+- **With Auto-Explain Disabled**: Click "Ask AI what this transaction does" to get an analysis
+- **Without API Key**: The Snap shows decoded transaction details and prompts you to add an API key
 
-### Using NPM packages with scripts
+The AI will:
+- Identify the contract and method being called
+- Explain what the transaction will do
+- Highlight any risks or concerns
+- Search for information about addresses involved
+- Format the explanation with markdown for easy reading
 
-Scripts are disabled by default for security reasons. If you need to use NPM
-packages with scripts, you can run `yarn allow-scripts auto`, and enable the
-script in the `lavamoat.allowScripts` section of `package.json`.
+## License
 
-See the documentation for [@lavamoat/allow-scripts](https://github.com/LavaMoat/LavaMoat/tree/main/packages/allow-scripts)
-for more information.
+MIT License - see LICENSE.* file for details
 
-# Debugging a snap
+## Acknowledgments
 
-https://docs.metamask.io/snaps/how-to/debug-a-snap/
+- Built on [MetaMask Snaps](https://metamask.io/snaps/)
+- Powered by [Claude AI](https://claude.ai)
+- Transaction decoding by [@metamask/eth-sig-util](https://www.npmjs.com/package/@metamask/eth-sig-util)

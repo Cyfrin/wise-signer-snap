@@ -1,9 +1,11 @@
-import { Hex, createProjectLogger } from '@metamask/utils';
 import type { Provider } from '@metamask/network-controller';
-import { decodeUniswapRouterTransactionData } from './uniswap';
-import { decodeTransactionDataWithSourcify } from './sourcify';
-import { getContractProxyAddress } from './proxy';
+import type { Hex } from '@metamask/utils';
+import { createProjectLogger } from '@metamask/utils';
+
 import { decodeTransactionDataWithFourByte } from './four-byte';
+import { getContractProxyAddress } from './proxy';
+import { decodeTransactionDataWithSourcify } from './sourcify';
+import { decodeUniswapRouterTransactionData } from './uniswap';
 
 const log = createProjectLogger('transaction-decode');
 
@@ -30,11 +32,19 @@ export type DecodedTransactionDataParam = {
   type?: string;
 
   // TODO: Fix in https://github.com/MetaMask/metamask-extension/issues/31973
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   value?: any;
   children?: DecodedTransactionDataParam[];
 };
 
+/**
+ *
+ * @param options0
+ * @param options0.transactionData
+ * @param options0.contractAddress
+ * @param options0.chainId
+ * @param options0.provider
+ */
 export async function decodeTransactionData({
   transactionData,
   contractAddress,
@@ -88,7 +98,6 @@ export async function decodeTransactionData({
     fourByteData,
   ]);
 
-
   if (sourcifyResult.status === 'fulfilled' && sourcifyResult.value) {
     log('Decoded data with Sourcify', sourcifyResult.value);
 
@@ -97,7 +106,6 @@ export async function decodeTransactionData({
       source: DecodedTransactionDataSource.Sourcify,
     };
   }
-
 
   log('Failed to decode data with Sourcify', sourcifyResult);
 
@@ -110,18 +118,25 @@ export async function decodeTransactionData({
     };
   }
 
-
   log('Failed to decode data with 4Byte', fourByteResult);
 
   return undefined;
 }
 
+/**
+ *
+ * @param methods
+ */
 function normalizeDecodedMethods(
   methods: DecodedTransactionDataMethod[],
 ): DecodedTransactionDataMethod[] {
   return methods.map((method) => normalizeDecodedMethod(method));
 }
 
+/**
+ *
+ * @param method
+ */
 function normalizeDecodedMethod(
   method: DecodedTransactionDataMethod,
 ): DecodedTransactionDataMethod {
@@ -131,6 +146,10 @@ function normalizeDecodedMethod(
   };
 }
 
+/**
+ *
+ * @param param
+ */
 function normalizeDecodedParam(
   param: DecodedTransactionDataParam,
 ): DecodedTransactionDataParam {
@@ -141,14 +160,20 @@ function normalizeDecodedParam(
 
   // Only add children property if it exists and is not undefined
   if (param.children) {
-    normalized.children = param.children.map((child) => normalizeDecodedParam(child));
+    normalized.children = param.children.map((child) =>
+      normalizeDecodedParam(child),
+    );
   }
 
   return normalized;
 }
 
 // TODO: Fix in https://github.com/MetaMask/metamask-extension/issues/31973
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
+/**
+ *
+ * @param value
+ */
 function normalizeDecodedParamValue(value: any): any {
   const hexValue = value._hex;
 

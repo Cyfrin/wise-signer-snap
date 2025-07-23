@@ -1,6 +1,9 @@
-import { FunctionFragment, Interface, ParamType } from '@ethersproject/abi';
-import { Hex, createProjectLogger } from '@metamask/utils';
-import {
+import type { FunctionFragment, ParamType } from '@ethersproject/abi';
+import { Interface } from '@ethersproject/abi';
+import type { Hex } from '@metamask/utils';
+import { createProjectLogger } from '@metamask/utils';
+
+import type {
   DecodedTransactionDataMethod,
   DecodedTransactionDataParam,
 } from './transaction-decode';
@@ -38,6 +41,12 @@ export type SourcifyMetadata = {
   };
 };
 
+/**
+ *
+ * @param transactionData
+ * @param contractAddress
+ * @param chainId
+ */
 export async function decodeTransactionDataWithSourcify(
   transactionData: Hex,
   contractAddress: Hex,
@@ -87,7 +96,11 @@ export async function decodeTransactionDataWithSourcify(
     const devDoc = metadata.output.devdoc?.methods[signature];
     const description = userDoc?.notice ?? devDoc?.details;
 
-    log('Extracted NatSpec', { signature, hasUserDoc: !!userDoc, hasDevDoc: !!devDoc });
+    log('Extracted NatSpec', {
+      signature,
+      hasUserDoc: Boolean(userDoc),
+      hasDevDoc: Boolean(devDoc),
+    });
 
     let values: any[];
     try {
@@ -115,17 +128,24 @@ export async function decodeTransactionDataWithSourcify(
     }
 
     return result;
-
   } catch (error) {
     log('Sourcify decoding failed', {
       contractAddress,
       chainId,
-      error: error
+      error,
     });
     return undefined;
   }
 }
 
+/**
+ *
+ * @param input
+ * @param index
+ * @param values
+ * @param userDoc
+ * @param devDoc
+ */
 function decodeParam(
   input: ParamType,
   index: number,
@@ -171,7 +191,7 @@ function decodeParam(
       children,
     };
   } catch (error) {
-    log('Failed to decode parameter', { input, index, error: error });
+    log('Failed to decode parameter', { input, index, error });
     return {
       name: input.name || `param_${index}`,
       type: input.type,
@@ -180,7 +200,15 @@ function decodeParam(
   }
 }
 
-async function fetchSourcifyMetadata(address: Hex, chainId: Hex): Promise<SourcifyMetadata | null> {
+/**
+ *
+ * @param address
+ * @param chainId
+ */
+async function fetchSourcifyMetadata(
+  address: Hex,
+  chainId: Hex,
+): Promise<SourcifyMetadata | null> {
   try {
     const response = await fetchSourcifyFiles(address, chainId);
 
@@ -197,7 +225,7 @@ async function fetchSourcifyMetadata(address: Hex, chainId: Hex): Promise<Sourci
       log('Metadata file not found in Sourcify response', {
         address,
         chainId,
-        availableFiles: response.files.map(f => f.name)
+        availableFiles: response.files.map((f) => f.name),
       });
       return null;
     }
@@ -207,12 +235,17 @@ async function fetchSourcifyMetadata(address: Hex, chainId: Hex): Promise<Sourci
     log('Failed to fetch Sourcify metadata', {
       address,
       chainId,
-      error: error
+      error,
     });
     return null;
   }
 }
 
+/**
+ *
+ * @param address
+ * @param chainId
+ */
 async function fetchSourcifyFiles(
   address: Hex,
   chainId: Hex,
@@ -227,13 +260,17 @@ async function fetchSourcifyFiles(
 
     if (!response.ok) {
       if (response.status === 404) {
-        log('Contract not found in Sourcify', { address, chainId, chainIdDecimal });
+        log('Contract not found in Sourcify', {
+          address,
+          chainId,
+          chainIdDecimal,
+        });
       } else {
         log('Sourcify API error', {
           address,
           chainId,
           status: response.status,
-          statusText: response.statusText
+          statusText: response.statusText,
         });
       }
       return null;
@@ -244,17 +281,23 @@ async function fetchSourcifyFiles(
     log('Network error fetching from Sourcify', {
       address,
       chainId,
-      error: error
+      error,
     });
     return null;
   }
 }
 
+/**
+ *
+ * @param name
+ * @param inputs
+ */
 function buildSignature(name: string | undefined, inputs: ParamType[]): string {
   const types = inputs.map((input) =>
     input.components?.length
-      ? `${buildSignature(undefined, input.components)}${input.type.endsWith('[]') ? '[]' : ''
-      }`
+      ? `${buildSignature(undefined, input.components)}${
+          input.type.endsWith('[]') ? '[]' : ''
+        }`
       : input.type,
   );
 

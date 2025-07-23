@@ -1,6 +1,8 @@
-import { Interface, TransactionDescription } from '@ethersproject/abi';
-import { Hex } from '@metamask/utils';
+import type { TransactionDescription } from '@ethersproject/abi';
+import { Interface } from '@ethersproject/abi';
+import type { Hex } from '@metamask/utils';
 import { addHexPrefix, stripHexPrefix } from 'ethereumjs-util';
+
 import { UNISWAP_ROUTER_COMMANDS } from './uniswap-commands';
 
 export const CHAIN_IDS = {
@@ -95,7 +97,7 @@ export type UniswapRouterCommand = {
     description: string;
 
     // TODO: Fix in https://github.com/MetaMask/metamask-extension/issues/31973
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     value: any;
   }[];
 };
@@ -182,6 +184,13 @@ const ABI = [
   },
 ];
 
+/**
+ *
+ * @param options0
+ * @param options0.transactionData
+ * @param options0.contractAddress
+ * @param options0.chainId
+ */
 export function decodeUniswapRouterTransactionData({
   transactionData,
   contractAddress,
@@ -219,9 +228,14 @@ export function decodeUniswapRouterTransactionData({
 
   return commandBytes
     .map((commandByte, i) => decodeUniswapCommand(commandByte, inputs[i]!))
-    .filter((command) => command !== undefined) as UniswapRouterCommand[];
+    .filter((command) => command !== undefined);
 }
 
+/**
+ *
+ * @param commandByte
+ * @param input
+ */
 function decodeUniswapCommand(
   commandByte: string,
   input: string,
@@ -232,7 +246,7 @@ function decodeUniswapCommand(
 
   const data =
     UNISWAP_ROUTER_COMMANDS[
-    String(commandIndex) as keyof typeof UNISWAP_ROUTER_COMMANDS
+      String(commandIndex) as keyof typeof UNISWAP_ROUTER_COMMANDS
     ];
 
   if (!data) {
@@ -258,6 +272,10 @@ function decodeUniswapCommand(
   };
 }
 
+/**
+ *
+ * @param rawPath
+ */
 function decodeUniswapPath(rawPath: string): UniswapPathPool[] {
   const pools: UniswapPathPool[] = [];
   let remainingData = stripHexPrefix(rawPath);
