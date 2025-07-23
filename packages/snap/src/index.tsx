@@ -1,17 +1,21 @@
 import type { OnTransactionHandler } from "@metamask/snaps-sdk";
-import { Box, Heading, Text } from "@metamask/snaps-sdk/jsx";
+import { Box, Heading, Text, Button, Divider, Spinner } from "@metamask/snaps-sdk/jsx";
 import { decodeTransactionData } from "./metamask-decode/util";
 import { SnapProviderAdapter } from "./snapProviderAdapter";
-import { explainTransaction } from "./ai-explainer";
+import { explainTransaction, isAutoExplainEnabled, isApiKeyConfigured } from "./ai-explainer";
+import { Markdown } from "./markdownFormatter";
+
+// Export handlers
+export { onHomePage, onUserInput } from "./homePage";
 
 // Types for our decoded data structure
 interface DecodedParam {
   name?: string;
   type?: string;
-  value?: any; // Made optional to match DecodedTransactionDataParam
+  value?: any;
   description?: string;
   children?: DecodedParam[];
-  decodedBytes?: any; // For recursively decoded bytes
+  decodedBytes?: any;
 }
 
 interface DecodedMethod {
@@ -34,30 +38,26 @@ async function recursivelyDecodeBytes(
   providerAdapter: any,
   maxDepth: number = 3
 ): Promise<DecodedParam> {
-  // Prevent infinite recursion
   if (maxDepth <= 0) {
     return param;
   }
 
-  // Check if this parameter contains bytes data that we should try to decode
   const shouldDecode =
     param.type?.includes('bytes') &&
     typeof param.value === 'string' &&
     param.value.startsWith('0x') &&
-    param.value.length > 10; // Must be more than just "0x" + a few chars
+    param.value.length > 10;
 
   if (shouldDecode) {
     try {
-      // Attempt to decode the bytes as transaction data
       const decodedBytes = await decodeTransactionData({
         transactionData: param.value as `0x${string}`,
-        contractAddress: '0x0000000000000000000000000000000000000000' as `0x${string}`, // Use zero address when no specific contract
+        contractAddress: '0x0000000000000000000000000000000000000000' as `0x${string}`,
         chainId: chainId as `0x${string}`,
         provider: providerAdapter,
       });
 
       if (decodedBytes && decodedBytes.data.length > 0) {
-        // Recursively process the decoded bytes parameters
         const processedMethods = await Promise.all(
           decodedBytes.data.map(async (method) => ({
             ...method,
@@ -75,12 +75,10 @@ async function recursivelyDecodeBytes(
         };
       }
     } catch (error) {
-      // If decoding fails, that's okay - not all bytes are decodable transaction data
       console.log(`Failed to decode bytes parameter: ${error}`);
     }
   }
 
-  // Recursively process children if they exist
   if (param.children && param.children.length > 0) {
     param.children = await Promise.all(
       param.children.map(async (child) =>
@@ -114,7 +112,6 @@ function renderParam(
         <Text>{prefix}  └ {param.description}</Text>
       ) : null}
 
-      {/* Show decoded bytes if available */}
       {param.decodedBytes ? (
         <Box>
           <Text>{prefix}  🔍 Decoded bytes content:</Text>
@@ -129,7 +126,7 @@ function renderParam(
                 renderParam(
                   decodedParam,
                   methodIndex,
-                  paramIndex + decodedParamIndex + 1000, // Offset to avoid key conflicts
+                  paramIndex + decodedParamIndex + 1000,
                   prefix + "      "
                 )
               )}
@@ -138,14 +135,13 @@ function renderParam(
         </Box>
       ) : null}
 
-      {/* Show children if available */}
       {param.children && param.children.length > 0 ? (
         <Box>
           {param.children.map((child, childIndex) =>
             renderParam(
               child,
               methodIndex,
-              paramIndex + childIndex + 100, // Offset to avoid key conflicts
+              paramIndex + childIndex + 100,
               prefix + "  └ "
             )
           )}
@@ -155,22 +151,18 @@ function renderParam(
   );
 }
 
-
-// TODO: Dump the decoded data into an AI!!!!
-
-// TODO: Either:
-// TODO: To it's own server... Or... Let the user just use their own Anthropic API key...
-
 export const onTransaction: OnTransactionHandler = async ({
   transaction,
   chainId,
   transactionOrigin,
 }) => {
-  console.log("WTF")
-  // Create provider adapter
+  // Check if auto-explain is enabled and API key is configured
+  const autoExplainEnabled = await isAutoExplainEnabled();
+  const hasApiKey = await isApiKeyConfigured();
+
   const providerAdapter = new SnapProviderAdapter(ethereum);
 
-  // Decode the transaction data using MetaMask's decoder
+  // Decode the transaction data
   const decodedResult = await decodeTransactionData({
     transactionData: transaction.data as `0x${string}`,
     contractAddress: transaction.to as `0x${string}`,
@@ -178,64 +170,187 @@ export const onTransaction: OnTransactionHandler = async ({
     provider: providerAdapter as any,
   });
 
-  console.log("WTF2")
-
-
-  // Recursively decode any bytes parameters
-  let processedResult: DecodedResult | null = null;
-  console.log(decodedResult)
-  if (decodedResult) {
-    const processedMethods = await Promise.all(
-      decodedResult.data.map(async (method) => ({
-        ...method,
-        params: await Promise.all(
-          method.params.map(async (param) =>
-            await recursivelyDecodeBytes(param, chainId, providerAdapter)
-          )
-        )
-      }))
-    );
-
-    processedResult = {
-      ...decodedResult,
-      data: processedMethods
-    };
-
-    const aiResponse = await explainTransaction(
-      JSON.stringify(decodedResult),
-      transaction.to,
-      transaction.from,
-      transaction.value,
-      chainId
-    );
-
-    // Extract text content from the AI response
-    const aiExplanation = aiResponse?.content?.[0]?.type === 'text'
-      ? aiResponse.content[0].text
-      : "Unable to generate AI explanation";
-
-    console.log(aiExplanation)
-
+  if (!decodedResult) {
     return {
       content: (
         <Box>
-          <p>hi</p>
-          <Text>{aiExplanation}</Text>
+          <Text>This transaction could not be decoded with available methods.</Text>
         </Box>
       ),
     };
   }
 
-  console.log("WTF3")
+  // Process and decode bytes parameters
+  const processedMethods = await Promise.all(
+    decodedResult.data.map(async (method) => ({
+      ...method,
+      params: await Promise.all(
+        method.params.map(async (param) =>
+          await recursivelyDecodeBytes(param, chainId, providerAdapter)
+        )
+      )
+    }))
+  );
 
-
-  return {
-    content: (
-      <Box>
-        <Text>To: {transaction.to}</Text>
-        <Text>Value: {transaction.value}</Text>
-        <Text>This transaction could not be decoded with available methods.</Text>
-      </Box>
-    ),
+  const processedResult: DecodedResult = {
+    ...decodedResult,
+    data: processedMethods
   };
+
+  // Auto-explain is enabled - show loading state first
+  if (autoExplainEnabled && hasApiKey) {
+    // Create an interface with loading state
+    const interfaceId = await snap.request({
+      method: "snap_createInterface",
+      params: {
+        ui: (
+          <Box>
+            <Heading>Analyzing Transaction...</Heading>
+            <Spinner />
+            <Text>Please wait while AI analyzes your transaction</Text>
+          </Box>
+        ),
+      },
+    });
+
+    // Get AI explanation
+    const aiResponse = await explainTransaction(
+      JSON.stringify(processedResult),
+      transaction.to || '',
+      transaction.from || '',
+      transaction.value || '0',
+      chainId
+    );
+
+    // Update the interface with the result
+    if (aiResponse.success && aiResponse.explanation) {
+      await snap.request({
+        method: 'snap_updateInterface',
+        params: {
+          id: interfaceId,
+          ui: (
+            <Box>
+              <Heading>AI Transaction Analysis</Heading>
+              <Markdown>{aiResponse.explanation}</Markdown>
+              <Divider />
+              <Text color="muted">
+                Source: {transactionOrigin || "Unknown"}
+              </Text>
+            </Box>
+          ),
+        },
+      });
+    } else {
+      // Show error with decoded data
+      await snap.request({
+        method: 'snap_updateInterface',
+        params: {
+          id: interfaceId,
+          ui: (
+            <Box>
+              <Heading>Transaction Details</Heading>
+              <Text color="error">
+                AI Analysis Error: {aiResponse.error || "Unknown error"}
+              </Text>
+
+              {aiResponse.errorType === 'NO_API_KEY' && (
+                <Text color="warning">
+                  Please configure your Claude API key in the Snap home page.
+                </Text>
+              )}
+
+              <Text>From: {transactionOrigin || "Unknown origin"}</Text>
+              {decodedResult.data.map((method, methodIndex) => (
+                <Box key={`method-${methodIndex}`}>
+                  <Text>📋 Method: {method.name}</Text>
+                  {method.description ? (
+                    <Text>  └ {method.description}</Text>
+                  ) : null}
+                  {method.params.map((param, paramIndex) =>
+                    renderParam(param, methodIndex, paramIndex, "  ")
+                  )}
+                </Box>
+              ))}
+            </Box>
+          ),
+        },
+      });
+    }
+
+    return {
+      id: interfaceId,
+    };
+  }
+
+  // If auto-explain is disabled but API key exists, create interactive interface
+  if (!autoExplainEnabled && hasApiKey) {
+    const interfaceId = await snap.request({
+      method: "snap_createInterface",
+      params: {
+        ui: (
+          <Box>
+            <Heading>Transaction Details</Heading>
+            <Text>From: {transactionOrigin || "Unknown origin"}</Text>
+            {decodedResult.data.map((method, methodIndex) => (
+              <Box key={`method-${methodIndex}`}>
+                <Text>📋 Method: {method.name}</Text>
+                {method.description ? (
+                  <Text>  └ {method.description}</Text>
+                ) : null}
+                {method.params.map((param, paramIndex) =>
+                  renderParam(param, methodIndex, paramIndex, "  ")
+                )}
+              </Box>
+            ))}
+            <Divider />
+            <Button name="ask-ai-analysis">
+              🤖 Ask AI what this transaction does
+            </Button>
+          </Box>
+        ),
+        context: {
+          processedResult: JSON.stringify(processedResult),
+          to: transaction.to || '',
+          from: transaction.from || '',
+          value: transaction.value || '0',
+          chainId: chainId,
+          transactionOrigin: transactionOrigin || ''
+        }
+      },
+    });
+
+    return {
+      id: interfaceId,
+    };
+  }
+
+  // If no API key, show message
+  if (!hasApiKey) {
+    return {
+      content: (
+        <Box>
+          <Heading>Transaction Details</Heading>
+          <Text>From: {transactionOrigin || "Unknown origin"}</Text>
+          {decodedResult.data.map((method, methodIndex) => (
+            <Box key={`method-${methodIndex}`}>
+              <Text>📋 Method: {method.name}</Text>
+              {method.description ? (
+                <Text>  └ {method.description}</Text>
+              ) : null}
+              {method.params.map((param, paramIndex) =>
+                renderParam(param, methodIndex, paramIndex, "  ")
+              )}
+            </Box>
+          ))}
+          <Divider />
+          <Text color="warning">
+            💡 Configure your Claude API key in the Snap home page to enable AI analysis
+          </Text>
+        </Box>
+      ),
+    };
+  }
+
+  // This should never be reached, but TypeScript needs a return
+  return null;
 };

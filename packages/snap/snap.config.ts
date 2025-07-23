@@ -23,9 +23,6 @@ const config: SnapConfig = {
     string_decoder: true,
     events: true,
   },
-  environment: {
-    CLAUDE_API_KEY: process.env.CLAUDE_API_KEY,
-  },
 };
 
 export default config;

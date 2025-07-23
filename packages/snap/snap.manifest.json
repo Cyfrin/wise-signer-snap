@@ -7,7 +7,7 @@
     "url": "https://github.com/cyfrin/wise-signer-snap"
   },
   "source": {
-    "shasum": "F/ZBrqAzweYPgGUBUe7pO+V4q1vv6QIVvuDYSbyJYRQ=",
+    "shasum": "TDaEgKnAwj8nOdkVO2gUhDcSucjgU4zIOxJiNpzDDsU=",
     "location": {
       "npm": {
         "filePath": "dist/bundle.js",
@@ -24,7 +24,8 @@
     },
     "endowment:ethereum-provider": {},
     "endowment:network-access": {},
-    "snap_manageState": {}
+    "snap_manageState": {},
+    "endowment:page-home": {}
   },
   "platformVersion": "6.18.0",
   "manifestVersion": "0.1"

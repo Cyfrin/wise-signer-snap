@@ -44,12 +44,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@anthropic-ai/sdk@npm:^0.54.0":
-  version: 0.54.0
-  resolution: "@anthropic-ai/sdk@npm:0.54.0"
+"@anthropic-ai/sdk@npm:^0.57.0":
+  version: 0.57.0
+  resolution: "@anthropic-ai/sdk@npm:0.57.0"
   bin:
     anthropic-ai-sdk: bin/cli
-  checksum: e931469fba1957d9472f7d0a8ab29be495562da83d22f1f9c2419571615b944df3fd49499c6b1fc3b33127626d2f69db82cb719c202564c56320b9dbcc4c9f25
+  checksum: 85d551cbc268595b3a0ce65c55f60f3b2d2b701568aefbd3d4d16635f1fb85e97e046cca86c1d6ece4b2587d35d9d9338a3e746d37cd78a78a817bec8c03769c
   languageName: node
   linkType: hard
 
@@ -18028,7 +18028,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "root@workspace:."
   dependencies:
-    "@anthropic-ai/sdk": ^0.54.0
+    "@anthropic-ai/sdk": ^0.57.0
     "@lavamoat/allow-scripts": ^3.0.0
     "@lavamoat/preinstall-always-fail": ^2.0.0
     "@metamask/eslint-config": ^14.0.0
