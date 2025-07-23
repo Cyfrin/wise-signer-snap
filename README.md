@@ -1,6 +1,7 @@
 # Wise Signer Snap
 
 > Note: This project is in early development and may change significantly. You should *still* do your own due diligence when using it.
+> Note 2: Be careful of your settings or you could easily run up your bill!
 
 A MetaMask Snap that uses Claude AI to explain blockchain transactions in plain English, helping users understand what they're signing before they sign it.
 
