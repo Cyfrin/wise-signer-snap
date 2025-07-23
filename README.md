@@ -7,7 +7,7 @@ A MetaMask Snap that uses Claude AI to explain blockchain transactions in plain 
 
 <img src="./img/insights.png" width="225" alt="wise-signer">
 
-> [Watch the video here](https://youtu.be/r9P7Fl-Ygmc)
+> [Watch the video here](https://youtu.be/jcFhv8AM2pU)
 
 - [Wise Signer Snap](#wise-signer-snap)
 - [Getting Started](#getting-started)
