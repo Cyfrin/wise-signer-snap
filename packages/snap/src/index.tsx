@@ -1,4 +1,4 @@
-import type { OnTransactionHandler } from '@metamask/snaps-sdk';
+import type { OnTransactionHandler, OnSignatureHandler } from '@metamask/snaps-sdk';
 import {
   Box,
   Heading,
@@ -8,7 +8,7 @@ import {
   Spinner,
   Link,
 } from '@metamask/snaps-sdk/jsx';
-
+import { calculateEIP712Hash } from './eip-712';
 import {
   explainTransaction,
   isAutoExplainEnabled,
@@ -347,7 +347,6 @@ export const onTransaction: OnTransactionHandler = async ({
   const chatGptUrl = `https://chatgpt.com/?q=${encodedContext}`;
   const abiDecodeUrl = `https://tools.cyfrin.io/abi-encoding?data=${transaction.data || ''}`;
 
-  // Case 1: Auto-explain is OFF (regardless of API key)
   if (!autoExplainEnabled) {
     const interfaceId = await snap.request({
       method: 'snap_createInterface',
@@ -385,7 +384,6 @@ export const onTransaction: OnTransactionHandler = async ({
     };
   }
 
-  // Case 2: Auto-explain is ON but no API key
   if (autoExplainEnabled && !hasApiKey) {
     return {
       content: (
@@ -408,3 +406,19 @@ export const onTransaction: OnTransactionHandler = async ({
   // This should never be reached, but TypeScript needs a return
   return null;
 };
+
+export const onSignature: OnSignatureHandler = async ({ signature }) => {
+  const eip712Data = calculateEIP712Hash(signature.data)
+
+  return {
+    content: (
+      <Box>
+        <Heading>EIP-712 Hashes</Heading>
+        <Text>If the parameters above look correct, and you are using a hardware device, to expidite signature verification on your hardware device, look for these hashes on devices that show EIP-712 data.</Text>
+        <Text>Domain Hash: {eip712Data.domainHash}</Text>
+        <Text>Message Hash: {eip712Data.messageHash}</Text>
+        <Text>EIP-712 Digest: {eip712Data.eip712Digest}</Text>
+      </Box>
+    )
+  };
+}
