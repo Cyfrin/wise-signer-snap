@@ -75,7 +75,8 @@ export const onHomePage: OnHomePageHandler = async () => {
             <Bold>Model Selection</Bold>
             <Text>Choose which Claude model to use for analysis</Text>
             <Dropdown name="model-selector" value={selectedModel}>
-              <Option value="claude-opus-4-20250514">Claude Opus 4 (Most Capable)</Option>
+              <Option value="claude-opus-4-1-20250805">Claude Opus 4.1 (Most Capable)</Option>
+              <Option value="claude-opus-4-20250514">Claude Opus 4</Option>
               <Option value="claude-sonnet-4-20250514">Claude Sonnet 4 (Balanced)</Option>
               <Option value="claude-3-7-sonnet-20250219">Claude Sonnet 3.7 (Fast)</Option>
             </Dropdown>
