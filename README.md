@@ -14,6 +14,7 @@ A MetaMask Snap that uses Claude AI to explain blockchain transactions in plain 
   - [Requirements](#requirements)
     - [Environment Variables](#environment-variables)
   - [Setup](#setup)
+  - [Debugging](#debugging)
 - [Usage](#usage)
   - [Configuration](#configuration)
   - [Transaction Analysis](#transaction-analysis)
@@ -55,6 +56,12 @@ To install the Snap in MetaMask Flask:
 1. Open MetaMask Flask
 2. Navigate to `http://localhost:8000` in your browser
 3. Click "Connect" when prompted to install the Snap
+
+## Debugging
+1. Go to chrome://extensions.
+2. Toggle Developer mode on in the top right corner.
+3. Find MetaMask Flask, and select Details.
+4. Under Inspect views, select `offscreen.html`.
 
 # Usage
 
