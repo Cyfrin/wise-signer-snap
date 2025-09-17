@@ -7,11 +7,11 @@
     "url": "https://github.com/cyfrin/wise-signer-snap"
   },
   "source": {
-    "shasum": "dRPpW/hYRKgv6nDoxgPyyaiHt+lKn+CcZUkNkA7cJCM=",
+    "shasum": "NoH023QOfvuux+k46mM8haUg3Mg5uNrAc3mU+RJFl0Y=",
     "location": {
       "npm": {
         "filePath": "dist/bundle.js",
-        "packageName": "snap",
+        "packageName": "wise-signer-snap",
         "registry": "https://registry.npmjs.org/",
         "iconPath": "images/wise-signer.svg"
       }
