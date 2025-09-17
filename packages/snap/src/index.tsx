@@ -6,6 +6,7 @@ import {
   Button,
   Divider,
   Spinner,
+  Link,
 } from '@metamask/snaps-sdk/jsx';
 
 import {
@@ -13,6 +14,7 @@ import {
   isAutoExplainEnabled,
   isApiKeyConfigured,
 } from './ai-explainer';
+import { SYSTEM_PROMPT, generateMessagePrompt } from './constants';
 import { Markdown } from './markdownFormatter';
 import { decodeTransactionData } from './metamask-decode/util';
 import { SnapProviderAdapter } from './snapProviderAdapter';
@@ -297,7 +299,7 @@ export const onTransaction: OnTransactionHandler = async ({
           id: interfaceId,
           ui: (
             <Box>
-              <Heading>Transaction Details</Heading>
+              <Heading>Ask AI</Heading>
               <Text color="error">
                 AI Analysis Error: {aiResponse.error || 'Unknown error'}
               </Text>
@@ -331,30 +333,39 @@ export const onTransaction: OnTransactionHandler = async ({
     };
   }
 
-  // If auto-explain is disabled but API key exists, create interactive interface
-  if (!autoExplainEnabled && hasApiKey) {
+  // Generate URLs for external services (used in multiple cases)
+  const userPrompt = generateMessagePrompt(
+    JSON.stringify(processedResult),
+    transaction.to || '',
+    transaction.from || '',
+    transaction.value || '0',
+    chainId,
+  );
+  const fullContext = `${SYSTEM_PROMPT}\n\n${userPrompt}`;
+  const encodedContext = encodeURIComponent(fullContext);
+  const claudeUrl = `https://claude.ai/new?q=${encodedContext}`;
+  const chatGptUrl = `https://chatgpt.com/?q=${encodedContext}`;
+  const abiDecodeUrl = `https://tools.cyfrin.io/abi-encoding?data=${transaction.data || ''}`;
+
+  // Case 1: Auto-explain is OFF (regardless of API key)
+  if (!autoExplainEnabled) {
     const interfaceId = await snap.request({
       method: 'snap_createInterface',
       params: {
         ui: (
           <Box>
-            <Heading>Transaction Details</Heading>
-            <Text>From: {transactionOrigin || 'Unknown origin'}</Text>
-            {decodedResult.data.map((method, methodIndex) => (
-              <Box key={`method-${methodIndex}`}>
-                <Text>📋 Method: {method.name}</Text>
-                {method.description ? (
-                  <Text> └ {method.description}</Text>
-                ) : null}
-                {method.params.map((param, paramIndex) =>
-                  renderParam(param, methodIndex, paramIndex, '  '),
-                )}
-              </Box>
-            ))}
+            <Link href={claudeUrl}>🌐 Open in Claude</Link>
+            <Link href={chatGptUrl}>💬 Open in ChatGPT</Link>
+            <Link href={abiDecodeUrl}>🔍 ABI-Decode</Link>
             <Divider />
-            <Button name="ask-ai-analysis">
-              🤖 Ask AI what this transaction does
-            </Button>
+            {hasApiKey ? (
+              <Button name="ask-ai-analysis">
+                🤖 Ask inside metamask
+              </Button>
+            ) : null}
+            <Text color="muted">
+              To enable auto-explain, add a Claude API key and enable auto-explain in the settings
+            </Text>
           </Box>
         ),
         context: {
@@ -364,6 +375,7 @@ export const onTransaction: OnTransactionHandler = async ({
           value: transaction.value || '0',
           chainId,
           transactionOrigin: transactionOrigin || '',
+          transactionData: transaction.data || '',
         },
       },
     });
@@ -373,26 +385,20 @@ export const onTransaction: OnTransactionHandler = async ({
     };
   }
 
-  // If no API key, show message
-  if (!hasApiKey) {
+  // Case 2: Auto-explain is ON but no API key
+  if (autoExplainEnabled && !hasApiKey) {
     return {
       content: (
         <Box>
-          <Heading>Transaction Details</Heading>
-          <Text>From: {transactionOrigin || 'Unknown origin'}</Text>
-          {decodedResult.data.map((method, methodIndex) => (
-            <Box key={`method-${methodIndex}`}>
-              <Text>📋 Method: {method.name}</Text>
-              {method.description ? <Text> └ {method.description}</Text> : null}
-              {method.params.map((param, paramIndex) =>
-                renderParam(param, methodIndex, paramIndex, '  '),
-              )}
-            </Box>
-          ))}
+          <Link href={claudeUrl}>🌐 Open in Claude</Link>
+          <Link href={chatGptUrl}>💬 Open in ChatGPT</Link>
+          <Link href={abiDecodeUrl}>🔍 ABI-Decode</Link>
           <Divider />
+          <Button name="ask-ai-analysis" variant="destructive">
+            🤖 Ask inside metamask (disabled)
+          </Button>
           <Text color="warning">
-            💡 Configure your Claude API key in the Snap home page to enable AI
-            analysis
+            💡 Configure your Claude API key in the Snap home page to enable analysis
           </Text>
         </Box>
       ),

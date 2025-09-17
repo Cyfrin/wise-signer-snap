@@ -49,11 +49,11 @@ yarn start
 This will:
 1. Install all dependencies
 2. Build the Snap
-3. Start a local server on `http://localhost:8080`
+3. Start a local server on `http://localhost:8000`
 
 To install the Snap in MetaMask Flask:
 1. Open MetaMask Flask
-2. Navigate to `http://localhost:8080` in your browser
+2. Navigate to `http://localhost:8000` in your browser
 3. Click "Connect" when prompted to install the Snap
 
 # Usage
