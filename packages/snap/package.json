@@ -1,6 +1,6 @@
 {
   "name": "wise-signer-snap",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "A snap that helps transcribe transactions to human-readable text.",
   "homepage": "https://github.com/cyfrin/wise-signer-snap#readme",
   "bugs": {
