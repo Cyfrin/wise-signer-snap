@@ -248,6 +248,20 @@ export const onTransaction: OnTransactionHandler = async ({
     data: processedMethods,
   };
 
+  // Generate URLs for external services (used in all cases)
+  const userPrompt = generateMessagePrompt(
+    JSON.stringify(processedResult),
+    transaction.to || '',
+    transaction.from || '',
+    transaction.value || '0',
+    chainId,
+  );
+  const fullContext = `${SYSTEM_PROMPT}\n\n${userPrompt}`;
+  const encodedContext = encodeURIComponent(fullContext);
+  const claudeUrl = `https://claude.ai/new?q=${encodedContext}`;
+  const chatGptUrl = `https://chatgpt.com/?q=${encodedContext}`;
+  const abiDecodeUrl = `https://tools.cyfrin.io/abi-encoding?data=${transaction.data || ''}`;
+
   // Auto-explain is enabled - show loading state first
   if (autoExplainEnabled && hasApiKey) {
     // Create an interface with loading state
@@ -259,6 +273,11 @@ export const onTransaction: OnTransactionHandler = async ({
             <Heading>Analyzing Transaction...</Heading>
             <Spinner />
             <Text>Please wait while AI analyzes your transaction</Text>
+            <Divider />
+            <Text>Or analyze externally:</Text>
+            <Link href={claudeUrl}>🌐 Open in Claude</Link>
+            <Link href={chatGptUrl}>💬 Open in ChatGPT</Link>
+            <Link href={abiDecodeUrl}>🔍 ABI-Decode</Link>
           </Box>
         ),
       },
@@ -287,6 +306,11 @@ export const onTransaction: OnTransactionHandler = async ({
               <Text color="muted">
                 Source: {transactionOrigin || 'Unknown'}
               </Text>
+              <Divider />
+              <Text>Analyze with other tools:</Text>
+              <Link href={claudeUrl}>🌐 Open in Claude</Link>
+              <Link href={chatGptUrl}>💬 Open in ChatGPT</Link>
+              <Link href={abiDecodeUrl}>🔍 ABI-Decode</Link>
             </Box>
           ),
         },
@@ -322,6 +346,11 @@ export const onTransaction: OnTransactionHandler = async ({
                   )}
                 </Box>
               ))}
+              <Divider />
+              <Text>Analyze with external tools:</Text>
+              <Link href={claudeUrl}>🌐 Open in Claude</Link>
+              <Link href={chatGptUrl}>💬 Open in ChatGPT</Link>
+              <Link href={abiDecodeUrl}>🔍 ABI-Decode</Link>
             </Box>
           ),
         },
@@ -333,20 +362,7 @@ export const onTransaction: OnTransactionHandler = async ({
     };
   }
 
-  // Generate URLs for external services (used in multiple cases)
-  const userPrompt = generateMessagePrompt(
-    JSON.stringify(processedResult),
-    transaction.to || '',
-    transaction.from || '',
-    transaction.value || '0',
-    chainId,
-  );
-  const fullContext = `${SYSTEM_PROMPT}\n\n${userPrompt}`;
-  const encodedContext = encodeURIComponent(fullContext);
-  const claudeUrl = `https://claude.ai/new?q=${encodedContext}`;
-  const chatGptUrl = `https://chatgpt.com/?q=${encodedContext}`;
-  const abiDecodeUrl = `https://tools.cyfrin.io/abi-encoding?data=${transaction.data || ''}`;
-
+  // Case for when auto-explain is disabled
   if (!autoExplainEnabled) {
     const interfaceId = await snap.request({
       method: 'snap_createInterface',
@@ -357,14 +373,16 @@ export const onTransaction: OnTransactionHandler = async ({
             <Link href={chatGptUrl}>💬 Open in ChatGPT</Link>
             <Link href={abiDecodeUrl}>🔍 ABI-Decode</Link>
             <Divider />
-            {hasApiKey ? (
-              <Button name="ask-ai-analysis">
-                🤖 Ask inside metamask
-              </Button>
-            ) : null}
-            <Text color="muted">
-              To enable auto-explain, add a Claude API key and enable auto-explain in the settings
-            </Text>
+            {
+              hasApiKey ? (
+                <Button name="ask-ai-analysis">
+                  🤖 Ask AI inside metamask
+                </Button>
+              ) :
+                <Text color="muted">
+                  To enable auto-explain, add a Claude API key and enable auto-explain in the settings
+                </Text>
+            }
           </Box>
         ),
         context: {

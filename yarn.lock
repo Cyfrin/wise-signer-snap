@@ -44,12 +44,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@anthropic-ai/sdk@npm:^0.57.0":
-  version: 0.57.0
-  resolution: "@anthropic-ai/sdk@npm:0.57.0"
+"@anthropic-ai/sdk@npm:^0.63.0":
+  version: 0.63.0
+  resolution: "@anthropic-ai/sdk@npm:0.63.0"
+  dependencies:
+    json-schema-to-ts: ^3.1.1
+  peerDependencies:
+    zod: ^4.0.0
+  peerDependenciesMeta:
+    zod:
+      optional: true
   bin:
     anthropic-ai-sdk: bin/cli
-  checksum: 85d551cbc268595b3a0ce65c55f60f3b2d2b701568aefbd3d4d16635f1fb85e97e046cca86c1d6ece4b2587d35d9d9338a3e746d37cd78a78a817bec8c03769c
+  checksum: 89512d4d51a94ff3bc0595130c788ea905a87396e2b4c58aa32efd0d9af55cd1fb52acf7f74fd2ea41c7c00a96b3568a4053d7a9db184f3908648b9e90254ba2
   languageName: node
   linkType: hard
 
@@ -1625,6 +1632,13 @@ __metadata:
   dependencies:
     regenerator-runtime: ^0.14.0
   checksum: 22d2e0abb86e90de489ab16bb578db6fe2b63a88696db431198b24963749820c723f1982298cdbbea187f7b2b80fb4d98a514faf114ddb2fdc14a4b96277b955
+  languageName: node
+  linkType: hard
+
+"@babel/runtime@npm:^7.18.3":
+  version: 7.28.4
+  resolution: "@babel/runtime@npm:7.28.4"
+  checksum: 934b0a0460f7d06637d93fcd1a44ac49adc33518d17253b5a0b55ff4cb90a45d8fe78bf034b448911dbec7aff2a90b918697559f78d21c99ff8dbadae9565b55
   languageName: node
   linkType: hard
 
@@ -16191,6 +16205,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"json-schema-to-ts@npm:^3.1.1":
+  version: 3.1.1
+  resolution: "json-schema-to-ts@npm:3.1.1"
+  dependencies:
+    "@babel/runtime": ^7.18.3
+    ts-algebra: ^2.0.0
+  checksum: b616f1c2d7492502e11eec4f8e4539ee1e897543a679d929494afdc164d9557275cead8372747b73f239b1e68056ffbf551b03ae82d0047bba0dfe2bbd6b64f4
+  languageName: node
+  linkType: hard
+
 "json-schema-traverse@npm:^0.4.1":
   version: 0.4.1
   resolution: "json-schema-traverse@npm:0.4.1"
@@ -22187,6 +22211,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"ts-algebra@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "ts-algebra@npm:2.0.0"
+  checksum: 970b0e7db49cf8c1a8ff2a816eb047fac8add47511f5e4995e4998c56c6f7b226399284412de88f3e137ab55c857a4262c0d8f02f0765730e7d3a021de2ea7ef
+  languageName: node
+  linkType: hard
+
 "ts-api-utils@npm:^2.0.1":
   version: 2.0.1
   resolution: "ts-api-utils@npm:2.0.1"
@@ -23406,7 +23437,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "wise-signer-project@workspace:."
   dependencies:
-    "@anthropic-ai/sdk": ^0.57.0
+    "@anthropic-ai/sdk": ^0.63.0
     "@lavamoat/allow-scripts": ^3.0.0
     "@lavamoat/preinstall-always-fail": ^2.0.0
     "@metamask/eslint-config": ^14.0.0

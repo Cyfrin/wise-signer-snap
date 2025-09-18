@@ -39,13 +39,12 @@ export async function explainTransaction(
       apiKey,
       dangerouslyAllowBrowser: true
     });
-
-    console.log("Calling Claude API...");
+    const generatedMessage = generateMessagePrompt(decodedTx, to, from, value, chainId)
 
     const msg = await anthropic.beta.messages.create({
       model: selectedModel,
       max_tokens: 20000,
-      temperature: 1,
+      temperature: 0.2,
       system: SYSTEM_PROMPT,
       messages: [
         {
@@ -53,7 +52,7 @@ export async function explainTransaction(
           "content": [
             {
               "type": "text",
-              "text": generateMessagePrompt(decodedTx, to, from, value, chainId)
+              "text": generatedMessage
             }
           ]
         }

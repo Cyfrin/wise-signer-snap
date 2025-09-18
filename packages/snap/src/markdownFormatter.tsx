@@ -52,7 +52,9 @@ function parseInlineMarkdown(text: string): MarkdownPart[] {
   const parts: MarkdownPart[] = [];
   const lines = text.split('\n');
 
-  for (const line of lines) {
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+    const line = lines[lineIndex];
+    
     // Check for headings
     const headingMatch = line.match(/^(#{1,6})\s+(.*)$/);
     if (headingMatch?.[1] && headingMatch[2]) {
@@ -61,41 +63,66 @@ function parseInlineMarkdown(text: string): MarkdownPart[] {
         content: headingMatch[2],
         level: headingMatch[1].length,
       });
+      if (lineIndex < lines.length - 1) {
+        parts.push({ type: 'text', content: '\n' });
+      }
       continue;
     }
 
-    // Parse inline elements (code and bold)
-    const inlineRegex = /(`[^`]+`)|(\*\*[^*]+\*\*)|([^`*]+)/g;
-    let inlineMatch;
-
-    while ((inlineMatch = inlineRegex.exec(line)) !== null) {
-      if (inlineMatch[1]) {
-        // Inline code
-        parts.push({
-          type: 'code',
-          content: inlineMatch[1].slice(1, -1), // Remove backticks
-        });
-      } else if (inlineMatch[2]) {
-        // Bold text
-        parts.push({
-          type: 'bold',
-          content: inlineMatch[2].slice(2, -2), // Remove asterisks
-        });
-      } else if (inlineMatch[3]) {
-        // Regular text
-        parts.push({
-          type: 'text',
-          content: inlineMatch[3],
-        });
+    // Parse inline elements - process the entire line at once
+    let currentPos = 0;
+    let lineContent = '';
+    
+    while (currentPos < line.length) {
+      // Check for inline code
+      if (line[currentPos] === '`') {
+        // Add any accumulated regular text
+        if (lineContent) {
+          parts.push({ type: 'text', content: lineContent });
+          lineContent = '';
+        }
+        
+        // Find closing backtick
+        const closeIndex = line.indexOf('`', currentPos + 1);
+        if (closeIndex !== -1) {
+          const codeContent = line.slice(currentPos + 1, closeIndex);
+          parts.push({ type: 'code', content: codeContent });
+          currentPos = closeIndex + 1;
+          continue;
+        }
       }
+      
+      // Check for bold text
+      if (line.slice(currentPos, currentPos + 2) === '**') {
+        // Add any accumulated regular text
+        if (lineContent) {
+          parts.push({ type: 'text', content: lineContent });
+          lineContent = '';
+        }
+        
+        // Find closing **
+        const closeIndex = line.indexOf('**', currentPos + 2);
+        if (closeIndex !== -1) {
+          const boldContent = line.slice(currentPos + 2, closeIndex);
+          parts.push({ type: 'bold', content: boldContent });
+          currentPos = closeIndex + 2;
+          continue;
+        }
+      }
+      
+      // Regular character - accumulate
+      lineContent += line[currentPos];
+      currentPos++;
     }
-
-    // Add newline as text if not the last line
-    if (line !== lines[lines.length - 1]) {
-      parts.push({
-        type: 'text',
-        content: '\n',
-      });
+    
+    // Add any remaining text from the line
+    if (lineContent) {
+      parts.push({ type: 'text', content: lineContent });
+    }
+    
+    // Add newline if not the last line
+    if (lineIndex < lines.length - 1) {
+      parts.push({ type: 'text', content: '\n' });
     }
   }
 
@@ -109,55 +136,72 @@ function parseInlineMarkdown(text: string): MarkdownPart[] {
  */
 export function renderMarkdown(text: string): JSX.Element {
   const parts = parseMarkdown(text);
+  const elements: JSX.Element[] = [];
+  let currentTextContent: (string | JSX.Element)[] = [];
+  
+  const flushText = () => {
+    if (currentTextContent.length > 0) {
+      elements.push(
+        <Text key={`text-${elements.length}`}>
+          {currentTextContent}
+        </Text>
+      );
+      currentTextContent = [];
+    }
+  };
 
-  return (
-    <Box>
-      {parts.map((part, index) => {
-        const key = `md-${index}`;
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    const key = `md-${i}`;
 
-        switch (part.type) {
-          case 'heading':
-            // Only support h2 (##) as Heading component
-            if (part.level === 2) {
-              return <Heading key={key}>{part.content}</Heading>;
-            }
-            // For other heading levels, use bold text
-            return (
-              <Text key={key}>
-                <Bold>{part.content}</Bold>
-              </Text>
-            );
-
-          case 'codeblock':
-            return (
-              <Box key={key}>
-                <Text color="alternative">{part.content}</Text>
-              </Box>
-            );
-
-          case 'code':
-            return (
-              <Text key={key} color="alternative">
-                `{part.content}`
-              </Text>
-            );
-
-          case 'bold':
-            return (
-              <Text key={key}>
-                <Bold>{part.content}</Bold>
-              </Text>
-            );
-
-          case 'text':
-            return <Text key={key}>{part.content}</Text>;
-
-          default:
-            return <Text key={key}>{part.content}</Text>;
+    switch (part.type) {
+      case 'heading':
+        flushText();
+        if (part.level === 2) {
+          elements.push(<Heading key={key}>{part.content}</Heading>);
+        } else {
+          elements.push(
+            <Text key={key}>
+              <Bold>{part.content}</Bold>
+            </Text>
+          );
         }
-      })}
-    </Box>
-  );
+        break;
+
+      case 'codeblock':
+        flushText();
+        elements.push(
+          <Box key={key}>
+            <Text color="alternative">{part.content}</Text>
+          </Box>
+        );
+        break;
+
+      case 'code':
+        // Inline code - add to current text content with styling
+        currentTextContent.push(
+          <Text key={key} color="alternative">
+            {part.content}
+          </Text>
+        );
+        break;
+
+      case 'bold':
+        // Bold text - add to current text content
+        currentTextContent.push(
+          <Bold key={key}>{part.content}</Bold>
+        );
+        break;
+
+      case 'text':
+        // Regular text - add to current text content
+        currentTextContent.push(part.content);
+        break;
+    }
+  }
+
+  flushText();
+  return <Box>{elements}</Box>;
 }
 
 /**
