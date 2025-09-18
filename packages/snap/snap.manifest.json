@@ -1,5 +1,5 @@
 {
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "A snap that helps transcribe transactions to human-readable text.",
   "proposedName": "Wise Signer",
   "repository": {
@@ -7,7 +7,7 @@
     "url": "https://github.com/cyfrin/wise-signer-snap"
   },
   "source": {
-    "shasum": "8OUsaq6C6FqXYMqUEn6S2dm0Nt+gATqOZXt2ZmL7jCk=",
+    "shasum": "OCb5GQY3zea9ZNsqGPsuyfbB1L6Bu5T/71YFgz9hgn8=",
     "location": {
       "npm": {
         "filePath": "dist/bundle.js",
