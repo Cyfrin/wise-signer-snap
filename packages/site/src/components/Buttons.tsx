@@ -145,7 +145,7 @@ export const SendWETHButton = (props: ComponentProps<typeof Button>) => {
 
   return (
     <Button {...props} onClick={handleSendWETH}>
-      Send WETH
+      Send WETH (Sepolia)
     </Button>
   );
 };
@@ -209,7 +209,7 @@ export const SupplyZKButton = (props: ComponentProps<typeof Button>) => {
 
   return (
     <Button {...props} onClick={handleSupplyZK}>
-      Supply ZK
+      Supply ZK (ZKSync Era)
     </Button>
   );
 };

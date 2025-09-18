@@ -1,15 +1,25 @@
 # Wise Signer Snap
 
-> Note: This project is in early development and may change significantly. You should *still* do your own due diligence when using it.
-> Note 2: Be careful of your settings or you could easily run up your bill!
+> [!Note] 
+> This project is in early development and may change significantly. You should *still* do your own due diligence when using it. 
+> 
+> Also, be careful of your settings if you have auto-explain on, or you could easily run up your bill!
 
 A MetaMask Snap that uses Claude AI to explain blockchain transactions in plain English, helping users understand what they're signing before they sign it.
 
 <img src="./img/insights.png" width="225" alt="wise-signer">
 
+# Features
+1. Built-in buttons to quickly send transaction/signature context to your AI of choice
+2. EIP-712 Hash calculation directly in MetaMask
+3. Auto-explain mode for seamless transaction analysis
+4. Buttons to bring your hex data to an ABI decoding site for further inspection
+
 > [Watch the video here](https://youtu.be/jcFhv8AM2pU)
 
+
 - [Wise Signer Snap](#wise-signer-snap)
+- [Features](#features)
 - [Getting Started](#getting-started)
   - [Requirements](#requirements)
     - [Environment Variables](#environment-variables)
@@ -73,7 +83,8 @@ To install the Snap in MetaMask Flask:
    - Click on the Snap in MetaMask (Menu → Snaps → AI Transaction Explainer)
    - Paste your Claude API key and click "Save API Key"
    - Choose your preferred model:
-     - **Claude Opus 4**: Most capable, best for complex transactions
+     - **Claude Opus 4.1**: Most capable, best for complex transactions
+     - **Claude Opus 4**: More balanced performance and speed
      - **Claude Sonnet 4**: Balanced performance and speed
      - **Claude Sonnet 3.7**: Fastest responses
    - Toggle "Auto-Explain" based on your preference
@@ -83,7 +94,7 @@ To install the Snap in MetaMask Flask:
 When you encounter a transaction:
 
 - **With Auto-Explain Enabled**: The Snap automatically analyzes the transaction and shows an AI explanation
-- **With Auto-Explain Disabled**: Click "Ask AI what this transaction does" to get an analysis
+- **With Auto-Explain Disabled**: Click "Ask AI inside metamask" to get an analysis
 - **Without API Key**: The Snap shows decoded transaction details and prompts you to add an API key
 
 The AI will:

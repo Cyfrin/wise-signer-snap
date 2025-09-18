@@ -204,6 +204,35 @@ export const onTransaction: OnTransactionHandler = async ({
   chainId,
   transactionOrigin,
 }) => {
+  const markdownTest = `
+  I'll analyze this transaction by first checking the addresses involved to understand what's happening. Let me search more specifically for the contract address and the recipient address: Based on my analysis of the transaction details, I can see this is happening on the Sepolia testnet (chain ID 11155111). Let me explain what's happening: 
+  
+  **Transaction Summary:** You are calling the \`transfer\` function on a token contract at \`0xdd13e55209fd76afe204dbda4007c227904f0a81\`, sending 1,000,000,000,000 units of a token to address \`0x321c020Bb4d7EDa179122870E99688DFf6b9914B\`. 
+  
+  **Key Concerns:** 
+  
+  1. **Unknown Contract**: The contract address \`0xdd13e55209fd76afe204dbda4007c227904f0a81\` does not appear to be a well-known or verified contract . This could be a test token, but it's important to verify what token this actually is. 
+  
+  2. **Token Amount**: The value \`1000000000000\` (1 trillion units) could represent different actual amounts depending on the token's decimal places. If this token has 18 decimals (like most ERC-20 tokens), you're sending 0.000001 tokens. If it has 6 decimals, you're sending 1,000,000 tokens. 
+  
+  3. **Recipient Address**: The recipient \`0x321c020Bb4d7EDa179122870E99688DFf6b9914B\` is an unknown address. Make sure this is the correct recipient you intend to send tokens to. 
+  
+  4. **Testnet Transaction**: Since this is on Sepolia testnet, the tokens have no real value, but you should still verify the contract and recipient addresses are correct for your testing purposes. 
+  
+  **Recommendation**: Before proceeding, verify what token contract this is and confirm the recipient address is correct. The transaction appears to be a standard ERC-20 token transfer, but without knowing the specific token or verifying the addresses, there's risk of sending to the wrong recipient or interacting with a malicious contract.
+  `
+
+  if (true) {
+    return {
+      content: (
+        <Box>
+          <Heading>Debug Mode Active</Heading>
+          <Markdown>{markdownTest}</Markdown>
+        </Box>
+      )
+    }
+  }
+
   // Check if auto-explain is enabled and API key is configured
   const autoExplainEnabled = await isAutoExplainEnabled();
   const hasApiKey = await isApiKeyConfigured();
@@ -248,6 +277,20 @@ export const onTransaction: OnTransactionHandler = async ({
     data: processedMethods,
   };
 
+  // Generate URLs for external services (used in all cases)
+  const userPrompt = generateMessagePrompt(
+    JSON.stringify(processedResult),
+    transaction.to || '',
+    transaction.from || '',
+    transaction.value || '0',
+    chainId,
+  );
+  const fullContext = `${SYSTEM_PROMPT}\n\n${userPrompt}`;
+  const encodedContext = encodeURIComponent(fullContext);
+  const claudeUrl = `https://claude.ai/new?q=${encodedContext}`;
+  const chatGptUrl = `https://chatgpt.com/?q=${encodedContext}`;
+  const abiDecodeUrl = `https://tools.cyfrin.io/abi-encoding?data=${transaction.data || ''}`;
+
   // Auto-explain is enabled - show loading state first
   if (autoExplainEnabled && hasApiKey) {
     // Create an interface with loading state
@@ -259,6 +302,11 @@ export const onTransaction: OnTransactionHandler = async ({
             <Heading>Analyzing Transaction...</Heading>
             <Spinner />
             <Text>Please wait while AI analyzes your transaction</Text>
+            <Divider />
+            <Text>Or analyze externally:</Text>
+            <Link href={claudeUrl}>🌐 Open in Claude</Link>
+            <Link href={chatGptUrl}>💬 Open in ChatGPT</Link>
+            <Link href={abiDecodeUrl}>🔍 ABI-Decode</Link>
           </Box>
         ),
       },
@@ -287,6 +335,11 @@ export const onTransaction: OnTransactionHandler = async ({
               <Text color="muted">
                 Source: {transactionOrigin || 'Unknown'}
               </Text>
+              <Divider />
+              <Text>Analyze with other tools:</Text>
+              <Link href={claudeUrl}>🌐 Open in Claude</Link>
+              <Link href={chatGptUrl}>💬 Open in ChatGPT</Link>
+              <Link href={abiDecodeUrl}>🔍 ABI-Decode</Link>
             </Box>
           ),
         },
@@ -322,6 +375,11 @@ export const onTransaction: OnTransactionHandler = async ({
                   )}
                 </Box>
               ))}
+              <Divider />
+              <Text>Analyze with external tools:</Text>
+              <Link href={claudeUrl}>🌐 Open in Claude</Link>
+              <Link href={chatGptUrl}>💬 Open in ChatGPT</Link>
+              <Link href={abiDecodeUrl}>🔍 ABI-Decode</Link>
             </Box>
           ),
         },
@@ -333,20 +391,7 @@ export const onTransaction: OnTransactionHandler = async ({
     };
   }
 
-  // Generate URLs for external services (used in multiple cases)
-  const userPrompt = generateMessagePrompt(
-    JSON.stringify(processedResult),
-    transaction.to || '',
-    transaction.from || '',
-    transaction.value || '0',
-    chainId,
-  );
-  const fullContext = `${SYSTEM_PROMPT}\n\n${userPrompt}`;
-  const encodedContext = encodeURIComponent(fullContext);
-  const claudeUrl = `https://claude.ai/new?q=${encodedContext}`;
-  const chatGptUrl = `https://chatgpt.com/?q=${encodedContext}`;
-  const abiDecodeUrl = `https://tools.cyfrin.io/abi-encoding?data=${transaction.data || ''}`;
-
+  // Case for when auto-explain is disabled
   if (!autoExplainEnabled) {
     const interfaceId = await snap.request({
       method: 'snap_createInterface',
@@ -357,14 +402,16 @@ export const onTransaction: OnTransactionHandler = async ({
             <Link href={chatGptUrl}>💬 Open in ChatGPT</Link>
             <Link href={abiDecodeUrl}>🔍 ABI-Decode</Link>
             <Divider />
-            {hasApiKey ? (
-              <Button name="ask-ai-analysis">
-                🤖 Ask inside metamask
-              </Button>
-            ) : null}
-            <Text color="muted">
-              To enable auto-explain, add a Claude API key and enable auto-explain in the settings
-            </Text>
+            {
+              hasApiKey ? (
+                <Button name="ask-ai-analysis">
+                  🤖 Ask AI inside metamask
+                </Button>
+              ) :
+                <Text color="muted">
+                  To enable auto-explain, add a Claude API key and enable auto-explain in the settings
+                </Text>
+            }
           </Box>
         ),
         context: {
@@ -392,8 +439,8 @@ export const onTransaction: OnTransactionHandler = async ({
           <Link href={chatGptUrl}>💬 Open in ChatGPT</Link>
           <Link href={abiDecodeUrl}>🔍 ABI-Decode</Link>
           <Divider />
-          <Button name="ask-ai-analysis" variant="destructive">
-            🤖 Ask inside metamask (disabled)
+          <Button name="disabled-button" variant="destructive">
+            🤖 Ask AI inside metamask (disabled)
           </Button>
           <Text color="warning">
             💡 Configure your Claude API key in the Snap home page to enable analysis

@@ -12,9 +12,9 @@ export const onHomePage: OnHomePageHandler = async () => {
   });
 
   const hasApiKey = !!state?.claudeApiKey;
-  const autoExplain = (state?.autoExplain as boolean) ?? true;
+  const autoExplain = (state?.autoExplain as boolean) ?? false;
   const selectedModel = (state?.selectedModel as string) ?? "claude-sonnet-4-20250514";
-  const maxWebSearches = (state?.maxWebSearches as number) ?? 10;
+  const maxWebSearches = (state?.maxWebSearches as number) ?? 5;
 
   return {
     content: (
@@ -88,7 +88,7 @@ export const onHomePage: OnHomePageHandler = async () => {
             <Bold>Web Search Depth</Bold>
             <Text>More searches = more thorough analysis but higher cost</Text>
             <Dropdown name="web-search-selector" value={maxWebSearches.toString()}>
-              <Option value="0">0 searches (None)</Option>
+              <Option value="1">1 searches (One)</Option>
               <Option value="5">5 searches (Basic)</Option>
               <Option value="10">10 searches (Standard)</Option>
               <Option value="20">20 searches (Thorough)</Option>
@@ -240,6 +240,7 @@ export const onUserInput: OnUserInputHandler = async ({ event, id, context }) =>
       },
     });
   }
+
 
   if (event.type === UserInputEventType.ButtonClickEvent && event.name === "ask-ai-analysis") {
     // Show loading state
