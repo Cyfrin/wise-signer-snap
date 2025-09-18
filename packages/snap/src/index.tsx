@@ -204,6 +204,35 @@ export const onTransaction: OnTransactionHandler = async ({
   chainId,
   transactionOrigin,
 }) => {
+  const markdownTest = `
+  I'll analyze this transaction by first checking the addresses involved to understand what's happening. Let me search more specifically for the contract address and the recipient address: Based on my analysis of the transaction details, I can see this is happening on the Sepolia testnet (chain ID 11155111). Let me explain what's happening: 
+  
+  **Transaction Summary:** You are calling the \`transfer\` function on a token contract at \`0xdd13e55209fd76afe204dbda4007c227904f0a81\`, sending 1,000,000,000,000 units of a token to address \`0x321c020Bb4d7EDa179122870E99688DFf6b9914B\`. 
+  
+  **Key Concerns:** 
+  
+  1. **Unknown Contract**: The contract address \`0xdd13e55209fd76afe204dbda4007c227904f0a81\` does not appear to be a well-known or verified contract . This could be a test token, but it's important to verify what token this actually is. 
+  
+  2. **Token Amount**: The value \`1000000000000\` (1 trillion units) could represent different actual amounts depending on the token's decimal places. If this token has 18 decimals (like most ERC-20 tokens), you're sending 0.000001 tokens. If it has 6 decimals, you're sending 1,000,000 tokens. 
+  
+  3. **Recipient Address**: The recipient \`0x321c020Bb4d7EDa179122870E99688DFf6b9914B\` is an unknown address. Make sure this is the correct recipient you intend to send tokens to. 
+  
+  4. **Testnet Transaction**: Since this is on Sepolia testnet, the tokens have no real value, but you should still verify the contract and recipient addresses are correct for your testing purposes. 
+  
+  **Recommendation**: Before proceeding, verify what token contract this is and confirm the recipient address is correct. The transaction appears to be a standard ERC-20 token transfer, but without knowing the specific token or verifying the addresses, there's risk of sending to the wrong recipient or interacting with a malicious contract.
+  `
+
+  if (true) {
+    return {
+      content: (
+        <Box>
+          <Heading>Debug Mode Active</Heading>
+          <Markdown>{markdownTest}</Markdown>
+        </Box>
+      )
+    }
+  }
+
   // Check if auto-explain is enabled and API key is configured
   const autoExplainEnabled = await isAutoExplainEnabled();
   const hasApiKey = await isApiKeyConfigured();
@@ -410,8 +439,8 @@ export const onTransaction: OnTransactionHandler = async ({
           <Link href={chatGptUrl}>💬 Open in ChatGPT</Link>
           <Link href={abiDecodeUrl}>🔍 ABI-Decode</Link>
           <Divider />
-          <Button name="ask-ai-analysis" variant="destructive">
-            🤖 Ask inside metamask (disabled)
+          <Button name="disabled-button" variant="destructive">
+            🤖 Ask AI inside metamask (disabled)
           </Button>
           <Text color="warning">
             💡 Configure your Claude API key in the Snap home page to enable analysis

@@ -12,9 +12,9 @@ export const onHomePage: OnHomePageHandler = async () => {
   });
 
   const hasApiKey = !!state?.claudeApiKey;
-  const autoExplain = (state?.autoExplain as boolean) ?? true;
+  const autoExplain = (state?.autoExplain as boolean) ?? false;
   const selectedModel = (state?.selectedModel as string) ?? "claude-sonnet-4-20250514";
-  const maxWebSearches = (state?.maxWebSearches as number) ?? 10;
+  const maxWebSearches = (state?.maxWebSearches as number) ?? 5;
 
   return {
     content: (
@@ -240,6 +240,7 @@ export const onUserInput: OnUserInputHandler = async ({ event, id, context }) =>
       },
     });
   }
+
 
   if (event.type === UserInputEventType.ButtonClickEvent && event.name === "ask-ai-analysis") {
     // Show loading state
