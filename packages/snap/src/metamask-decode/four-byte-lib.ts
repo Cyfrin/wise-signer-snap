@@ -1,5 +1,4 @@
 import type { Hex } from '@metamask/utils';
-import { MethodRegistry } from 'eth-method-registry';
 import { isHexPrefixed } from 'ethereumjs-util';
 
 import fetchWithCache from './fetch-with-cache';
@@ -47,60 +46,6 @@ export async function getMethodFrom4Byte(
   });
 
   return fourByteResponse.results[0]!.text_signature;
-}
-
-let registry: MethodRegistry | undefined;
-
-type HttpProvider = {
-  host: string;
-  timeout: number;
-};
-
-type MethodRegistryArgs = {
-  network: string;
-  provider: HttpProvider;
-};
-
-/**
- *
- * @param fourBytePrefix
- * @param allow4ByteRequests
- * @param provider
- */
-export async function getMethodDataAsync(
-  fourBytePrefix: string,
-  allow4ByteRequests: boolean,
-  provider?: unknown,
-) {
-  try {
-    let fourByteSig = null;
-    if (allow4ByteRequests) {
-      fourByteSig = await getMethodFrom4Byte(fourBytePrefix).catch((e) => {
-        // console.error(e);
-        return null;
-      });
-    }
-
-    if (!registry) {
-      registry = new MethodRegistry({
-        provider: provider ?? (globalThis as any).ethereumProvider,
-      } as MethodRegistryArgs);
-    }
-
-    if (!fourByteSig) {
-      return {};
-    }
-
-    const parsedResult = registry.parse(fourByteSig);
-
-    return {
-      name: parsedResult.name,
-      params: parsedResult.args,
-    };
-  } catch (error) {
-    // console.error(error);
-    return {};
-  }
 }
 
 /**
