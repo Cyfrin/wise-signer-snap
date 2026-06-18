@@ -1,4 +1,7 @@
-import type { OnTransactionHandler, OnSignatureHandler } from '@metamask/snaps-sdk';
+import type {
+  OnTransactionHandler,
+  OnSignatureHandler,
+} from '@metamask/snaps-sdk';
 import {
   Box,
   Heading,
@@ -8,13 +11,22 @@ import {
   Spinner,
   Link,
 } from '@metamask/snaps-sdk/jsx';
+
 import {
   explainTransaction,
   isAutoExplainEnabled,
   isApiKeyConfigured,
 } from './ai-explainer';
-import { SYSTEM_PROMPT, generateMessagePrompt } from './constants';
-import { calculateSignatureHashes, calculateCalldataDigest } from './eip-712';
+import {
+  SYSTEM_PROMPT,
+  generateMessagePrompt,
+  generateSignaturePrompt,
+} from './constants';
+import {
+  calculateSignatureHashes,
+  calculateCalldataDigest,
+  type SignatureHashResult,
+} from './eip-712';
 import { Markdown } from './markdownFormatter';
 import { decodeTransactionData } from './metamask-decode/util';
 import { SnapProviderAdapter } from './snapProviderAdapter';
@@ -392,16 +404,14 @@ export const onTransaction: OnTransactionHandler = async ({
             <Link href={chatGptUrl}>💬 Open in ChatGPT</Link>
             <Link href={abiDecodeUrl}>🔍 ABI-Decode</Link>
             <Divider />
-            {
-              hasApiKey ? (
-                <Button name="ask-ai-analysis">
-                  🤖 Ask AI inside metamask
-                </Button>
-              ) :
-                <Text color="muted">
-                  To enable auto-explain, add a Claude API key and enable auto-explain in the settings
-                </Text>
-            }
+            {hasApiKey ? (
+              <Button name="ask-ai-analysis">🤖 Ask AI inside metamask</Button>
+            ) : (
+              <Text color="muted">
+                To enable auto-explain, add a Claude API key and enable
+                auto-explain in the settings
+              </Text>
+            )}
             {hashesSection}
           </Box>
         ),
@@ -434,7 +444,8 @@ export const onTransaction: OnTransactionHandler = async ({
             🤖 Ask AI inside metamask (disabled)
           </Button>
           <Text color="warning">
-            💡 Configure your Claude API key in the Snap home page to enable analysis
+            💡 Configure your Claude API key in the Snap home page to enable
+            analysis
           </Text>
           {hashesSection}
         </Box>
@@ -446,73 +457,220 @@ export const onTransaction: OnTransactionHandler = async ({
   return null;
 };
 
-export const onSignature: OnSignatureHandler = async ({ signature }) => {
-  const result = calculateSignatureHashes(signature);
+/**
+ * Converts a chain id (decimal string, number, or hex) to 0x-hex form.
+ *
+ * @param chainId - The chain id from an EIP-712 domain.
+ * @returns The chain id as a 0x-prefixed hex string.
+ */
+function toHexChainId(chainId: unknown): `0x${string}` {
+  try {
+    if (typeof chainId === 'string' && chainId.startsWith('0x')) {
+      return chainId as `0x${string}`;
+    }
+    return `0x${BigInt(chainId as any).toString(16)}`;
+  } catch {
+    return '0x1';
+  }
+}
 
+/**
+ * Renders the ERC-8213 verification hashes for a signature.
+ *
+ * @param result - The computed signature hashes.
+ * @returns The hashes UI.
+ */
+function renderSignatureHashes(result: SignatureHashResult): JSX.Element {
   if (result.kind === 'eip712') {
     const heading = result.isSafe ? 'Safe Signing Hashes' : 'EIP-712 Hashes';
     const digestLabel = result.isSafe
       ? 'Safe Transaction Hash (safeTxHash)'
       : 'EIP-712 Digest';
 
-    return {
-      content: (
-        <Box>
-          <Heading>{heading}</Heading>
-          <Text>
-            If the parameters above look correct and you are using a hardware
-            device, verify these hashes on-device to confirm what you are
-            signing (ERC-8213).
-          </Text>
-          <Text>Domain Hash: {result.domainHash}</Text>
-          <Text>Message Hash: {result.messageHash}</Text>
-          <Text>
-            {digestLabel}: {result.eip712Digest}
-          </Text>
-        </Box>
-      ),
-    };
+    return (
+      <Box>
+        <Heading>{heading}</Heading>
+        <Text>
+          If the parameters above look correct and you are using a hardware
+          device, verify these hashes on-device to confirm what you are signing
+          (ERC-8213).
+        </Text>
+        <Text>Domain Hash: {result.domainHash}</Text>
+        <Text>Message Hash: {result.messageHash}</Text>
+        <Text>
+          {digestLabel}: {result.eip712Digest}
+        </Text>
+      </Box>
+    );
   }
 
   if (result.kind === 'eip191') {
-    return {
-      content: (
-        <Box>
-          <Heading>Signed Message Hash</Heading>
-          <Text>
-            This is a personal_sign message. Verify this EIP-191 digest on your
-            hardware device to confirm what you are signing (ERC-8213).
-          </Text>
-          <Text>Message Digest: {result.digest}</Text>
-        </Box>
-      ),
-    };
+    return (
+      <Box>
+        <Heading>Signed Message Hash</Heading>
+        <Text>
+          This is a personal_sign message. Verify this EIP-191 digest on your
+          hardware device to confirm what you are signing (ERC-8213).
+        </Text>
+        <Text>Message Digest: {result.digest}</Text>
+      </Box>
+    );
   }
 
   if (result.kind === 'raw') {
-    return {
-      content: (
-        <Box>
-          <Heading>Signing Hash</Heading>
-          <Text color="warning">
-            This is a raw eth_sign over a 32-byte hash — there is no way to see
-            what it represents. Only sign if you fully trust the source.
-          </Text>
-          <Text>Digest: {result.digest}</Text>
-        </Box>
-      ),
-    };
+    return (
+      <Box>
+        <Heading>Signing Hash</Heading>
+        <Text color="warning">
+          This is a raw eth_sign over a 32-byte hash — there is no way to see
+          what it represents. Only sign if you fully trust the source.
+        </Text>
+        <Text>Digest: {result.digest}</Text>
+      </Box>
+    );
   }
 
   const methodNote = result.method ? ` (${result.method})` : '';
 
+  return (
+    <Box>
+      <Heading>Signature</Heading>
+      <Text>
+        Could not compute a verification hash for this signature{methodNote}.
+      </Text>
+    </Box>
+  );
+}
+
+/**
+ * If a typed-data message carries calldata (e.g. a Safe `SafeTx`), decode it the
+ * same way a transaction would be, so the signer can see the call they are
+ * authorizing.
+ *
+ * @param typed - The parsed EIP-712 typed data.
+ * @param providerAdapter - The provider used for ABI lookups.
+ * @returns The decoded UI, the inner calldata, and its decoded JSON, or null.
+ */
+async function decodeInnerCalldata(
+  typed: any,
+  providerAdapter: SnapProviderAdapter,
+): Promise<{
+  element: JSX.Element;
+  innerData: string;
+  decodedJson: string;
+} | null> {
+  const innerData = typed?.message?.data;
+  if (
+    typeof innerData !== 'string' ||
+    !innerData.startsWith('0x') ||
+    innerData.length <= 10
+  ) {
+    return null;
+  }
+
+  const innerTo =
+    typeof typed?.message?.to === 'string'
+      ? typed.message.to
+      : '0x0000000000000000000000000000000000000000';
+  const chainId = toHexChainId(typed?.domain?.chainId);
+
+  try {
+    const decoded = await decodeTransactionData({
+      transactionData: innerData as `0x${string}`,
+      contractAddress: innerTo as `0x${string}`,
+      chainId,
+      provider: providerAdapter as any,
+    });
+
+    if (!decoded || decoded.data.length === 0) {
+      return null;
+    }
+
+    const methods = await Promise.all(
+      decoded.data.map(async (method) => ({
+        ...method,
+        params: await Promise.all(
+          method.params.map(async (param) =>
+            recursivelyDecodeBytes(param, chainId, providerAdapter),
+          ),
+        ),
+      })),
+    );
+
+    const element = (
+      <Box>
+        <Divider />
+        <Text color="muted">
+          Decoded inner call (what this signature authorizes):
+        </Text>
+        <Text>To: {innerTo}</Text>
+        {methods.map((method, methodIndex) => (
+          <Box key={`inner-method-${methodIndex}`}>
+            <Text>📋 Method: {method.name}</Text>
+            {method.description ? <Text> └ {method.description}</Text> : null}
+            {method.params.map((param, paramIndex) =>
+              renderParam(param, methodIndex, paramIndex, '  '),
+            )}
+          </Box>
+        ))}
+      </Box>
+    );
+
+    return {
+      element,
+      innerData,
+      decodedJson: JSON.stringify({ ...decoded, data: methods }),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export const onSignature: OnSignatureHandler = async ({ signature }) => {
+  const result = calculateSignatureHashes(signature);
+
+  let typed: any;
+  try {
+    typed =
+      typeof signature.data === 'string'
+        ? JSON.parse(signature.data)
+        : signature.data;
+  } catch {
+    typed = undefined;
+  }
+
+  const inner =
+    result.kind === 'eip712' && typed
+      ? await decodeInnerCalldata(typed, new SnapProviderAdapter(ethereum))
+      : null;
+
+  const signatureJson =
+    typeof signature.data === 'string'
+      ? signature.data
+      : JSON.stringify(signature.data ?? {});
+  const aiContext = `${SYSTEM_PROMPT}\n\n${generateSignaturePrompt(
+    signatureJson,
+    inner?.decodedJson,
+  )}`;
+  const encodedContext = encodeURIComponent(aiContext);
+  const claudeUrl = `https://claude.ai/new?q=${encodedContext}`;
+  const chatGptUrl = `https://chatgpt.com/?q=${encodedContext}`;
+  const abiDecodeUrl = inner
+    ? `https://tools.cyfrin.io/abi-encoding?data=${inner.innerData}`
+    : null;
+
   return {
     content: (
       <Box>
-        <Heading>Signature</Heading>
-        <Text>
-          Could not compute a verification hash for this signature{methodNote}.
-        </Text>
+        {renderSignatureHashes(result)}
+        {inner?.element}
+        <Divider />
+        <Text>Analyze with AI:</Text>
+        <Link href={claudeUrl}>🌐 Open in Claude</Link>
+        <Link href={chatGptUrl}>💬 Open in ChatGPT</Link>
+        {abiDecodeUrl ? (
+          <Link href={abiDecodeUrl}>🔍 ABI-Decode inner call</Link>
+        ) : null}
       </Box>
     ),
   };

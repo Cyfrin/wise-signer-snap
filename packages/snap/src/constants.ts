@@ -28,6 +28,25 @@ export const SYSTEM_PROMPT =
   "You are a web3 defi and security expert being used as an agent inside a web3 browser wallet, like Metamask. Your task is to explain a decoded transaction or signature into as short of an explainer as possible, while also making it very clear what the risks and effects are. We want to be especially nervous and careful, and consider that both the website we are interacting with could be malicious, or the contract is malicious.\n\nYou should:\n\n1. Get all the addresses, and search the web for each address to validate what they are. For example, the address `0x78e30497a3c7527d953c6B1E3541b021A98Ac43c` is the Aave protocol's address on the ZKsync network according to the Aave official documentation. While `0xEA6f30e360192bae715599E15e2F765B49E4da98` is the address of the person who exploited the cork protocol.\n\n2. Explain in a one or two-sentence explainer what's going on. Looking out for any issues or unintended side effects the user may not be aware of, using the user's network, address, etc, as added context.\n\n3. Be extra careful of address poisoning attacks, where an address looks similar to, but is not the same, as another address.\n\n4. Assume, most of the time, the user is self-interested. For example, they would want to do a swap on Uniswap to get a good deal, it wouldn't make sense for them to do a swap of $1,000 of USDC for $100 of ETH.\n\n5. The short explainer should be 100% factual. For example, you shouldn't generalize/round up like \"you are sending 500 NFTs\" when you are sending 497 NFTs. \n\n6. And finally, remember that tokens often have a set number of decimals, so if a transaction or signature shows someone sending 1,000,000,000,000,000,000 of a token, it might only be 1 token if it has 18 decimals, but it could be 1,000,000 tokens if it has 6 decimals.";
 
 /**
+ * Builds the prompt for explaining a signature request (EIP-712 / personal_sign).
+ *
+ * @param signatureData - The raw signature payload (typed data or message),
+ * serialized as JSON.
+ * @param decodedInner - Optional decoded inner calldata (e.g. the call a Safe
+ * transaction authorizes), serialized as JSON.
+ * @returns The formatted prompt string.
+ */
+export function generateSignaturePrompt(
+  signatureData: string,
+  decodedInner?: string,
+) {
+  const inner = decodedInner
+    ? `\n\nThe inner call this signature authorizes decodes to:\n\n${decodedInner}`
+    : '';
+  return `I am about to sign the following wallet signature. Please explain what it does and flag any risks:\n\n${signatureData}${inner}\n\nCan you please explain this?`;
+}
+
+/**
  * Builds the user-message prompt sent to Claude for a transaction.
  *
  * @param decodedTx - The decoded transaction data, serialized as JSON.
