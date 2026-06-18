@@ -32,18 +32,10 @@ export const SYSTEM_PROMPT =
  *
  * @param signatureData - The raw signature payload (typed data or message),
  * serialized as JSON.
- * @param decodedInner - Optional decoded inner calldata (e.g. the call a Safe
- * transaction authorizes), serialized as JSON.
  * @returns The formatted prompt string.
  */
-export function generateSignaturePrompt(
-  signatureData: string,
-  decodedInner?: string,
-) {
-  const inner = decodedInner
-    ? `\n\nThe inner call this signature authorizes decodes to:\n\n${decodedInner}`
-    : '';
-  return `I am about to sign the following wallet signature. Please explain what it does and flag any risks:\n\n${signatureData}${inner}\n\nCan you please explain this?`;
+export function generateSignaturePrompt(signatureData: string) {
+  return `I am about to sign the following wallet signature. Please explain what it does and flag any risks:\n\n${signatureData}\n\nCan you please explain this?`;
 }
 
 /**

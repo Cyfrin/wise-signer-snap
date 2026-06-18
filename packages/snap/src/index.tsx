@@ -458,23 +458,6 @@ export const onTransaction: OnTransactionHandler = async ({
 };
 
 /**
- * Converts a chain id (decimal string, number, or hex) to 0x-hex form.
- *
- * @param chainId - The chain id from an EIP-712 domain.
- * @returns The chain id as a 0x-prefixed hex string.
- */
-function toHexChainId(chainId: unknown): `0x${string}` {
-  try {
-    if (typeof chainId === 'string' && chainId.startsWith('0x')) {
-      return chainId as `0x${string}`;
-    }
-    return `0x${BigInt(chainId as any).toString(16)}`;
-  } catch {
-    return '0x1';
-  }
-}
-
-/**
  * Renders the ERC-8213 verification hashes for a signature.
  *
  * @param result - The computed signature hashes.
@@ -543,127 +526,59 @@ function renderSignatureHashes(result: SignatureHashResult): JSX.Element {
 }
 
 /**
- * If a typed-data message carries calldata (e.g. a Safe `SafeTx`), decode it the
- * same way a transaction would be, so the signer can see the call they are
- * authorizing.
+ * The inner calldata a typed-data signature authorizes (e.g. a Safe `SafeTx`'s
+ * `message.data`), used to build the external ABI-decode link. Decoding happens
+ * in that external tool, not in-snap.
  *
- * @param typed - The parsed EIP-712 typed data.
- * @param providerAdapter - The provider used for ABI lookups.
- * @returns The decoded UI, the inner calldata, and its decoded JSON, or null.
+ * @param signature - The signature request.
+ * @param signature.data
+ * @param result - The computed signature hashes (only EIP-712 carries calldata).
+ * @returns The inner calldata hex, or undefined when there is none.
  */
-async function decodeInnerCalldata(
-  typed: any,
-  providerAdapter: SnapProviderAdapter,
-): Promise<{
-  element: JSX.Element;
-  innerData: string;
-  decodedJson: string;
-} | null> {
-  const innerData = typed?.message?.data;
-  if (
-    typeof innerData !== 'string' ||
-    !innerData.startsWith('0x') ||
-    innerData.length <= 10
-  ) {
-    return null;
+function extractInnerCalldata(
+  signature: { data?: any },
+  result: SignatureHashResult,
+): string | undefined {
+  if (result.kind !== 'eip712') {
+    return undefined;
   }
 
-  const innerTo =
-    typeof typed?.message?.to === 'string'
-      ? typed.message.to
-      : '0x0000000000000000000000000000000000000000';
-  const chainId = toHexChainId(typed?.domain?.chainId);
-
   try {
-    const decoded = await decodeTransactionData({
-      transactionData: innerData as `0x${string}`,
-      contractAddress: innerTo as `0x${string}`,
-      chainId,
-      provider: providerAdapter as any,
-    });
-
-    if (!decoded || decoded.data.length === 0) {
-      return null;
-    }
-
-    const methods = await Promise.all(
-      decoded.data.map(async (method) => ({
-        ...method,
-        params: await Promise.all(
-          method.params.map(async (param) =>
-            recursivelyDecodeBytes(param, chainId, providerAdapter),
-          ),
-        ),
-      })),
-    );
-
-    const element = (
-      <Box>
-        <Divider />
-        <Text color="muted">
-          Decoded inner call (what this signature authorizes):
-        </Text>
-        <Text>To: {innerTo}</Text>
-        {methods.map((method, methodIndex) => (
-          <Box key={`inner-method-${methodIndex}`}>
-            <Text>📋 Method: {method.name}</Text>
-            {method.description ? <Text> └ {method.description}</Text> : null}
-            {method.params.map((param, paramIndex) =>
-              renderParam(param, methodIndex, paramIndex, '  '),
-            )}
-          </Box>
-        ))}
-      </Box>
-    );
-
-    return {
-      element,
-      innerData,
-      decodedJson: JSON.stringify({ ...decoded, data: methods }),
-    };
-  } catch {
-    return null;
-  }
-}
-
-export const onSignature: OnSignatureHandler = async ({ signature }) => {
-  const result = calculateSignatureHashes(signature);
-
-  let typed: any;
-  try {
-    typed =
+    const typed =
       typeof signature.data === 'string'
         ? JSON.parse(signature.data)
         : signature.data;
+    const data = typed?.message?.data;
+    if (typeof data === 'string' && data.startsWith('0x') && data.length > 10) {
+      return data;
+    }
   } catch {
-    typed = undefined;
+    // Not parseable typed data — no inner calldata to link.
   }
 
-  const inner =
-    result.kind === 'eip712' && typed
-      ? await decodeInnerCalldata(typed, new SnapProviderAdapter(ethereum))
-      : null;
+  return undefined;
+}
+
+export const onSignature: OnSignatureHandler = ({ signature }) => {
+  const result = calculateSignatureHashes(signature);
+  const innerData = extractInnerCalldata(signature, result);
 
   const signatureJson =
     typeof signature.data === 'string'
       ? signature.data
       : JSON.stringify(signature.data ?? {});
-  const aiContext = `${SYSTEM_PROMPT}\n\n${generateSignaturePrompt(
-    signatureJson,
-    inner?.decodedJson,
-  )}`;
+  const aiContext = `${SYSTEM_PROMPT}\n\n${generateSignaturePrompt(signatureJson)}`;
   const encodedContext = encodeURIComponent(aiContext);
   const claudeUrl = `https://claude.ai/new?q=${encodedContext}`;
   const chatGptUrl = `https://chatgpt.com/?q=${encodedContext}`;
-  const abiDecodeUrl = inner
-    ? `https://tools.cyfrin.io/abi-encoding?data=${inner.innerData}`
+  const abiDecodeUrl = innerData
+    ? `https://tools.cyfrin.io/abi-encoding?data=${innerData}`
     : null;
 
   return {
     content: (
       <Box>
         {renderSignatureHashes(result)}
-        {inner?.element}
         <Divider />
         <Text>Analyze with AI:</Text>
         <Link href={claudeUrl}>🌐 Open in Claude</Link>
