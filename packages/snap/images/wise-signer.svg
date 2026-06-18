@@ -7,8 +7,16 @@
     </linearGradient>
   </defs>
   <rect width="64" height="64" rx="16" fill="url(#ws-bg)"/>
-  <g fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M9 32 C 19 19 45 19 55 32 C 45 45 19 45 9 32 Z" stroke-width="4.5"/>
-    <path d="M26 32 L 30.5 36.5 L 38.5 27" stroke-width="5.5"/>
-  </g>
+  <!-- ear tufts: rounded, splayed slightly outward -->
+  <path d="M17 26 Q16 12 21 11 Q27 12 29 21 Z" fill="#FFFFFF"/>
+  <path d="M47 26 Q48 12 43 11 Q37 12 35 21 Z" fill="#FFFFFF"/>
+  <!-- head -->
+  <circle cx="32" cy="35" r="18" fill="#FFFFFF"/>
+  <!-- eyes -->
+  <circle cx="25" cy="33" r="7.2" fill="#1A24B8"/>
+  <circle cx="39" cy="33" r="7.2" fill="#1A24B8"/>
+  <circle cx="26.4" cy="31.6" r="2.1" fill="#FFFFFF"/>
+  <circle cx="40.4" cy="31.6" r="2.1" fill="#FFFFFF"/>
+  <!-- beak -->
+  <path d="M32 39 L29.2 43 L34.8 43 Z" fill="#1A24B8"/>
 </svg>
