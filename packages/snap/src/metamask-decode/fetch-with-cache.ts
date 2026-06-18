@@ -1,4 +1,3 @@
-import localforage from 'localforage';
 import { memoize } from 'lodash';
 
 export const MILLISECOND = 1;
@@ -7,21 +6,18 @@ export const MINUTE = SECOND * 60;
 export const HOUR = MINUTE * 60;
 export const DAY = HOUR * 24;
 
+// The Snap sandbox has no IndexedDB/localStorage, so localforage can't run here.
+// A module-level Map de-dupes repeated lookups within a decode (e.g. nested
+// calldata) without trying to persist across executions.
+type CacheEntry = { cachedResponse: any; cachedTime: number };
+const memoryCache = new Map<string, CacheEntry>();
+
 /**
  *
  * @param key
  */
-export async function getStorageItem(key: any) {
-  try {
-    const serializedData = await localforage.getItem(key);
-    if (serializedData === null) {
-      return undefined;
-    }
-    // @ts-ignore
-    return JSON.parse(serializedData);
-  } catch (err) {
-    return undefined;
-  }
+export function getStorageItem(key: string): CacheEntry | undefined {
+  return memoryCache.get(key);
 }
 
 /**
@@ -29,13 +25,8 @@ export async function getStorageItem(key: any) {
  * @param key
  * @param value
  */
-export async function setStorageItem(key: any, value: any) {
-  try {
-    const serializedData = JSON.stringify(value);
-    await localforage.setItem(key, serializedData);
-  } catch (err) {
-    // console.warn(err);
-  }
+export function setStorageItem(key: string, value: CacheEntry): void {
+  memoryCache.set(key, value);
 }
 
 /**
@@ -56,8 +47,8 @@ const getFetchWithTimeout = memoize((timeout = SECOND * 30) => {
   return async function fetchWithTimeout(
     url: RequestInfo,
     opts?: RequestInit,
-  ): Promise<Response> {
-    const abortController = new window.AbortController();
+  ): Promise<globalThis.Response> {
+    const abortController = new globalThis.AbortController();
 
     // Add the provided signal to the list of signals that can abort the request
     const abortSignals = [abortController.signal];
@@ -65,11 +56,11 @@ const getFetchWithTimeout = memoize((timeout = SECOND * 30) => {
       abortSignals.push(opts.signal);
     }
 
-    const combinedAbortController = new AbortController();
+    const combinedAbortController = new globalThis.AbortController();
     const abortHandler = () => combinedAbortController.abort();
     abortSignals.forEach((sig) => sig.addEventListener('abort', abortHandler));
 
-    const f = window.fetch(url, {
+    const f = globalThis.fetch(url, {
       ...opts,
       signal: combinedAbortController.signal,
     });
@@ -112,8 +103,8 @@ const fetchWithCache = async ({
   ) {
     throw new Error('fetchWithCache only supports GET requests');
   }
-  if (!(fetchOptions.headers instanceof window.Headers)) {
-    fetchOptions.headers = new window.Headers(fetchOptions.headers);
+  if (!(fetchOptions.headers instanceof globalThis.Headers)) {
+    fetchOptions.headers = new globalThis.Headers(fetchOptions.headers);
   }
   if (
     fetchOptions.headers.has('Content-Type') &&
@@ -124,7 +115,7 @@ const fetchWithCache = async ({
 
   const currentTime = Date.now();
   const cacheKey = `cachedFetch:${url}`;
-  const { cachedResponse, cachedTime } = (await getStorageItem(cacheKey)) || {};
+  const { cachedResponse, cachedTime } = getStorageItem(cacheKey) || {};
   if (cachedResponse && currentTime - cachedTime < cacheRefreshTime) {
     return cachedResponse;
   }
@@ -154,7 +145,7 @@ const fetchWithCache = async ({
     cachedTime: currentTime,
   };
 
-  await setStorageItem(cacheKey, cacheEntry);
+  setStorageItem(cacheKey, cacheEntry);
   return responseJson;
 };
 

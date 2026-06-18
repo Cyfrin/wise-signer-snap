@@ -40,9 +40,10 @@ The Snap works with any EVM-compatible network that MetaMask supports, including
 5. Paste it into the Snap's settings
 
 ### Which Claude model should I choose?
-- **Claude Opus 4**: Best for complex DeFi transactions, multi-step operations, and when accuracy is critical
-- **Claude Sonnet 4**: Good balance of capability and speed for most transactions
-- **Claude Sonnet 3.7**: Fastest option, great for simple transfers and common operations
+- **Claude Opus 4.8**: Best for complex DeFi transactions, multi-step operations, and when accuracy is critical
+- **Claude Sonnet 4.6**: Good balance of capability and speed for most transactions (default)
+- **Claude Haiku 4.5**: Fastest and cheapest, great for simple transfers and common operations
+- **Claude Fable 5**: Most powerful, premium pricing for the hardest analysis
 
 ### What is Auto-Explain mode?
 - **Enabled**: Transactions are automatically analyzed when they appear
@@ -98,7 +99,7 @@ The AI examines:
 Claude API has rate limits. If you hit them:
 - Wait a few minutes and try again
 - Consider upgrading your Anthropic plan
-- Use a faster model (Sonnet 3.7) for routine transactions
+- Use a faster model (Haiku 4.5) for routine transactions
 
 ### The Snap isn't appearing on transactions
 Make sure:

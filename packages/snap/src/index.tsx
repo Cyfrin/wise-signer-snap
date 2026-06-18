@@ -8,13 +8,13 @@ import {
   Spinner,
   Link,
 } from '@metamask/snaps-sdk/jsx';
-import { calculateEIP712Hash } from './eip-712';
 import {
   explainTransaction,
   isAutoExplainEnabled,
   isApiKeyConfigured,
 } from './ai-explainer';
 import { SYSTEM_PROMPT, generateMessagePrompt } from './constants';
+import { calculateSignatureHashes, calculateCalldataDigest } from './eip-712';
 import { Markdown } from './markdownFormatter';
 import { decodeTransactionData } from './metamask-decode/util';
 import { SnapProviderAdapter } from './snapProviderAdapter';
@@ -262,6 +262,19 @@ export const onTransaction: OnTransactionHandler = async ({
   const chatGptUrl = `https://chatgpt.com/?q=${encodedContext}`;
   const abiDecodeUrl = `https://tools.cyfrin.io/abi-encoding?data=${transaction.data || ''}`;
 
+  // ERC-8213 Calldata Digest — the single hash a hardware-wallet signer can
+  // verify instead of paging through raw calldata.
+  const calldataDigest = calculateCalldataDigest(transaction.data);
+  const hashesSection = calldataDigest ? (
+    <Box>
+      <Divider />
+      <Text color="muted">
+        ERC-8213 Calldata Digest (verify this on your hardware device):
+      </Text>
+      <Text>{calldataDigest}</Text>
+    </Box>
+  ) : null;
+
   // Auto-explain is enabled - show loading state first
   if (autoExplainEnabled && hasApiKey) {
     // Create an interface with loading state
@@ -311,6 +324,7 @@ export const onTransaction: OnTransactionHandler = async ({
               <Link href={claudeUrl}>🌐 Open in Claude</Link>
               <Link href={chatGptUrl}>💬 Open in ChatGPT</Link>
               <Link href={abiDecodeUrl}>🔍 ABI-Decode</Link>
+              {hashesSection}
             </Box>
           ),
         },
@@ -351,6 +365,7 @@ export const onTransaction: OnTransactionHandler = async ({
               <Link href={claudeUrl}>🌐 Open in Claude</Link>
               <Link href={chatGptUrl}>💬 Open in ChatGPT</Link>
               <Link href={abiDecodeUrl}>🔍 ABI-Decode</Link>
+              {hashesSection}
             </Box>
           ),
         },
@@ -383,6 +398,7 @@ export const onTransaction: OnTransactionHandler = async ({
                   To enable auto-explain, add a Claude API key and enable auto-explain in the settings
                 </Text>
             }
+            {hashesSection}
           </Box>
         ),
         context: {
@@ -416,6 +432,7 @@ export const onTransaction: OnTransactionHandler = async ({
           <Text color="warning">
             💡 Configure your Claude API key in the Snap home page to enable analysis
           </Text>
+          {hashesSection}
         </Box>
       ),
     };
@@ -426,17 +443,73 @@ export const onTransaction: OnTransactionHandler = async ({
 };
 
 export const onSignature: OnSignatureHandler = async ({ signature }) => {
-  const eip712Data = calculateEIP712Hash(signature.data)
+  const result = calculateSignatureHashes(signature);
+
+  if (result.kind === 'eip712') {
+    const heading = result.isSafe ? 'Safe Signing Hashes' : 'EIP-712 Hashes';
+    const digestLabel = result.isSafe
+      ? 'Safe Transaction Hash (safeTxHash)'
+      : 'EIP-712 Digest';
+
+    return {
+      content: (
+        <Box>
+          <Heading>{heading}</Heading>
+          <Text>
+            If the parameters above look correct and you are using a hardware
+            device, verify these hashes on-device to confirm what you are
+            signing (ERC-8213).
+          </Text>
+          <Text>Domain Hash: {result.domainHash}</Text>
+          <Text>Message Hash: {result.messageHash}</Text>
+          <Text>
+            {digestLabel}: {result.eip712Digest}
+          </Text>
+        </Box>
+      ),
+    };
+  }
+
+  if (result.kind === 'eip191') {
+    return {
+      content: (
+        <Box>
+          <Heading>Signed Message Hash</Heading>
+          <Text>
+            This is a personal_sign message. Verify this EIP-191 digest on your
+            hardware device to confirm what you are signing (ERC-8213).
+          </Text>
+          <Text>Message Digest: {result.digest}</Text>
+        </Box>
+      ),
+    };
+  }
+
+  if (result.kind === 'raw') {
+    return {
+      content: (
+        <Box>
+          <Heading>Signing Hash</Heading>
+          <Text color="warning">
+            This is a raw eth_sign over a 32-byte hash — there is no way to see
+            what it represents. Only sign if you fully trust the source.
+          </Text>
+          <Text>Digest: {result.digest}</Text>
+        </Box>
+      ),
+    };
+  }
+
+  const methodNote = result.method ? ` (${result.method})` : '';
 
   return {
     content: (
       <Box>
-        <Heading>EIP-712 Hashes</Heading>
-        <Text>If the parameters above look correct, and you are using a hardware device, to expidite signature verification on your hardware device, look for these hashes on devices that show EIP-712 data.</Text>
-        <Text>Domain Hash: {eip712Data.domainHash}</Text>
-        <Text>Message Hash: {eip712Data.messageHash}</Text>
-        <Text>EIP-712 Digest: {eip712Data.eip712Digest}</Text>
+        <Heading>Signature</Heading>
+        <Text>
+          Could not compute a verification hash for this signature{methodNote}.
+        </Text>
       </Box>
-    )
+    ),
   };
-}
+};
