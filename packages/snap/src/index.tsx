@@ -263,8 +263,12 @@ export const onTransaction: OnTransactionHandler = async ({
   const abiDecodeUrl = `https://tools.cyfrin.io/abi-encoding?data=${transaction.data || ''}`;
 
   // ERC-8213 Calldata Digest — the single hash a hardware-wallet signer can
-  // verify instead of paging through raw calldata.
-  const calldataDigest = calculateCalldataDigest(transaction.data);
+  // verify instead of paging through raw calldata. Skipped for plain value
+  // transfers, which have no calldata.
+  const calldataDigest =
+    transaction.data && transaction.data !== '0x'
+      ? calculateCalldataDigest(transaction.data)
+      : null;
   const hashesSection = calldataDigest ? (
     <Box>
       <Divider />

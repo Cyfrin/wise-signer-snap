@@ -52,11 +52,11 @@ export type SignatureHashResult =
       messageHash: string;
       eip712Digest: string;
       isSafe: boolean;
-      primaryType?: string;
+      primaryType?: string | undefined;
     }
   | { kind: 'eip191'; digest: string }
   | { kind: 'raw'; digest: string }
-  | { kind: 'unsupported'; method?: string };
+  | { kind: 'unsupported'; method?: string | undefined };
 
 const TYPED_DATA_METHODS = new Set([
   'eth_signTypedData',
@@ -131,19 +131,27 @@ export const calculateSignatureHashes = (signature: {
 };
 
 /**
- * The ERC-8213 Calldata Digest: keccak256 of the transaction calldata. Returns
- * null when there is no calldata (a plain value transfer).
+ * The ERC-8213 Calldata Digest — `keccak256( uint256(len(calldata)) ‖ calldata )`.
  *
- * @param data - The transaction `data` field.
- * @returns The 32-byte digest, or null.
+ * The 32-byte big-endian length prefix is what distinguishes this from a plain
+ * keccak256 of the data — it prevents shared-prefix collisions. chainId is
+ * intentionally not mixed in, so the digest is reusable across networks. This
+ * matches the ERC-8213 reference vectors so a signer can verify the same value
+ * the spec's tooling computes.
+ *
+ * @param data - The calldata, hex-encoded. `'0x'` (no calldata) hashes the
+ * empty byte string, per the spec.
+ * @returns The 32-byte digest, or null when data is missing or malformed.
  */
 export const calculateCalldataDigest = (data?: string): string | null => {
-  if (!data || data === '0x' || data.length < 4) {
+  if (data === undefined || data === null) {
     return null;
   }
 
   try {
-    return ethers.keccak256(data);
+    const bytes = ethers.getBytes(data);
+    const lenWord = ethers.toBeHex(bytes.length, 32);
+    return ethers.keccak256(ethers.concat([lenWord, bytes]));
   } catch {
     return null;
   }
