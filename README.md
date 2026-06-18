@@ -83,10 +83,10 @@ To install the Snap in MetaMask Flask:
    - Click on the Snap in MetaMask (Menu → Snaps → AI Transaction Explainer)
    - Paste your Claude API key and click "Save API Key"
    - Choose your preferred model:
-     - **Claude Opus 4.1**: Most capable, best for complex transactions
-     - **Claude Opus 4**: More balanced performance and speed
-     - **Claude Sonnet 4**: Balanced performance and speed
-     - **Claude Sonnet 3.7**: Fastest responses
+     - **Claude Opus 4.8**: Most capable, best for complex transactions
+     - **Claude Sonnet 4.6**: Balanced performance and speed (default)
+     - **Claude Haiku 4.5**: Fastest and cheapest
+     - **Claude Fable 5**: Most powerful, premium pricing
    - Toggle "Auto-Explain" based on your preference
 
 ## Transaction Analysis
